@@ -1,4 +1,4 @@
-﻿@page "/extrato"
+@page "/extrato"
 @using ManyControl_Web.Models
 @using ManyControl_Web.Services
 @inject FinanceWebService FinanceService
@@ -306,7 +306,7 @@ else
         var receitas = await FinanceService.GetReceitasMesAsync(DataReferencia.Year, DataReferencia.Month);
         var despesas = await FinanceService.GetDespesasMesAsync(DataReferencia.Year, DataReferencia.Month);
 
-        TotalReceitasMes = receitas.Sum(r => r.Valor);
+        TotalReceitasMes = receitas.Where(r => r.Recebida).Sum(r => r.Valor);
         TotalDespesasMes = despesas.Sum(d => d.Valor);
         TotalDespesasPagasMes = despesas.Where(d => d.Paga).Sum(d => d.Valor);
         TotalDespesasPendentesMes = despesas.Where(d => !d.Paga).Sum(d => d.Valor);

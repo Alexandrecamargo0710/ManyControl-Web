@@ -66,7 +66,7 @@ public class FinanceWebService
     public async Task<decimal> GetSaldoGeralAcumuladoAsync()
     {
         await InicializarAsync();
-        var receitas = _receitas.Where(r => r.DeletedAt == null).Sum(r => r.Valor);
+        var receitas = _receitas.Where(r => r.DeletedAt == null && r.Recebida).Sum(r => r.Valor);
         var despesas = _despesas.Where(d => d.DeletedAt == null).Sum(d => d.Valor);
         return receitas - despesas;
     }

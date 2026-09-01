@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using ManyControl_Web.Models
 @using ManyControl_Web.Services
 @using ManyControl_Web.Components
@@ -386,7 +386,7 @@
         ReceitasDoMes = await FinanceService.GetReceitasMesAsync(ano, mes);
         DespesasDoMes = await FinanceService.GetDespesasMesAsync(ano, mes);
 
-        TotalReceitas = ReceitasDoMes.Sum(r => r.Valor);
+        TotalReceitas = ReceitasDoMes.Where(r => r.Recebida).Sum(r => r.Valor);
         TotalDespesas = DespesasDoMes.Sum(d => d.Valor);
         TotalPagas = DespesasDoMes.Where(d => d.Paga).Sum(d => d.Valor);
         TotalPendentes = DespesasDoMes.Where(d => !d.Paga).Sum(d => d.Valor);
