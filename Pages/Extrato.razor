@@ -12,35 +12,62 @@
     <button class="month-btn" @onclick="MesAnterior">
         <i class="bi bi-chevron-left"></i>
     </button>
-    <div class="month-label" @onclick="VoltarMesAtual" style="cursor: pointer;">
-        @NomeMesAno
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <div class="month-label" @onclick="VoltarMesAtual" style="cursor: pointer;">
+            @NomeMesAno
+        </div>
+        @if (IsMesDiferenteDoAtual)
+        {
+            <button style="background: transparent; border: none; color: var(--color-blue); font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 6px;" @onclick="VoltarMesAtual">
+                <i class="bi bi-arrow-counterclockwise"></i> Ir para o mês atual
+            </button>
+        }
     </div>
     <button class="month-btn" @onclick="ProximoMes">
         <i class="bi bi-chevron-right"></i>
     </button>
 </div>
 
+<!-- Card de Comprometimento de Renda do Mês -->
+@if (TotalReceitasMes > 0)
+{
+    <div class="summary-card" style="margin-bottom: 16px; padding: 12px 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 6px;">
+            <span style="color: var(--text-secondary); font-weight: 600;">Comprometimento da Renda</span>
+            <strong style="color: @(ProporcaoDespesas >= 1 ? "var(--color-red)" : ProporcaoDespesas >= 0.7 ? "var(--color-amber)" : "var(--color-green)");">
+                @((ProporcaoDespesas * 100).ToString("F0"))%
+            </strong>
+        </div>
+        <div style="width: 100%; height: 8px; background: var(--bg-input); border-radius: 999px; overflow: hidden;">
+            <div style="width: @Math.Min(100, ProporcaoDespesas * 100)%; height: 100%; background: @(ProporcaoDespesas >= 1 ? "var(--color-red)" : ProporcaoDespesas >= 0.7 ? "var(--color-amber)" : "var(--color-green)"); transition: width 0.3s;"></div>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+            Despesas representam @((ProporcaoDespesas * 100).ToString("F0"))% das receitas deste mês
+        </div>
+    </div>
+}
+
 <!-- Campo de Busca -->
 <div class="search-box">
     <i class="bi bi-search"></i>
-    <input type="text" class="search-input" placeholder="Buscar lançamento ou categoria..." @bind="TermoBusca" @bind:event="oninput" />
+    <input type="text" class="search-input" placeholder="Buscar por descrição ou categoria..." @bind="TermoBusca" @bind:event="oninput" />
 </div>
 
 <!-- Filtros Rápidos -->
 <div class="filter-bar">
-    <button class="chip-filter @(FiltroTipo == "Todos" ? "active" : "")" @onclick='() => SetFiltroTipo("Todos")'>
+    <button class="chip-filter @(FiltroTipo == "Todos" && FiltroStatus == "Todos" ? "active" : "")" @onclick='() => SetFiltro("Todos", "Todos")'>
         Todos
     </button>
-    <button class="chip-filter @(FiltroTipo == "Receita" ? "active" : "")" @onclick='() => SetFiltroTipo("Receita")'>
+    <button class="chip-filter @(FiltroTipo == "Receita" ? "active" : "")" @onclick='() => SetFiltro("Receita", "Todos")'>
         <i class="bi bi-arrow-down-left"></i> Receitas
     </button>
-    <button class="chip-filter @(FiltroTipo == "Despesa" ? "active" : "")" @onclick='() => SetFiltroTipo("Despesa")'>
+    <button class="chip-filter @(FiltroTipo == "Despesa" && FiltroStatus == "Todos" ? "active" : "")" @onclick='() => SetFiltro("Despesa", "Todos")'>
         <i class="bi bi-arrow-up-right"></i> Despesas
     </button>
-    <button class="chip-filter @(FiltroStatus == "Paga" ? "active" : "")" @onclick='() => SetFiltroStatus("Paga")'>
+    <button class="chip-filter @(FiltroStatus == "Paga" ? "active" : "")" @onclick='() => SetFiltro("Despesa", "Paga")'>
         <i class="bi bi-check2"></i> Pagas
     </button>
-    <button class="chip-filter @(FiltroStatus == "Pendente" ? "active" : "")" @onclick='() => SetFiltroStatus("Pendente")'>
+    <button class="chip-filter @(FiltroStatus == "Pendente" ? "active" : "")" @onclick='() => SetFiltro("Despesa", "Pendente")'>
         <i class="bi bi-hourglass-split"></i> Pendentes
     </button>
 </div>
@@ -48,7 +75,7 @@
 <!-- Cabeçalho da Lista e Totalizador Filtrado -->
 <div class="section-header">
     <div class="section-title">
-        <i class="bi bi-list-ul"></i> Extrato Detalhado
+        <i class="bi bi-list-ul"></i> Extrato (@ItensFiltrados.Count)
     </div>
     <div class="section-count">
         Total: <strong style="color: @(TotalFiltrado >= 0 ? "var(--color-green)" : "var(--color-red)");">@TotalFiltrado.ToString("C2", PtBr)</strong>
@@ -59,8 +86,8 @@
 {
     <div class="empty-state">
         <div class="empty-icon"><i class="bi bi-search"></i></div>
-        <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Nenhum registro encontrado</div>
-        <div style="font-size: 13px;">Tente ajustar os filtros ou o termo de busca.</div>
+        <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Nenhum lançamento encontrado</div>
+        <div style="font-size: 13px;">Tente mudar o mês ou limpar os filtros de busca.</div>
     </div>
 }
 else
@@ -113,27 +140,28 @@ else
     private ModalTransacao? modalTransacao;
     private DateTime DataReferencia = DateTime.Today;
     private List<TransacaoItem> TodasTransacoes = [];
+    private decimal TotalReceitasMes = 0;
+    private decimal TotalDespesasMes = 0;
+    private double ProporcaoDespesas => TotalReceitasMes > 0 ? (double)(TotalDespesasMes / TotalReceitasMes) : 0;
 
     private string TermoBusca = string.Empty;
     private string FiltroTipo = "Todos";
     private string FiltroStatus = "Todos";
 
     private string NomeMesAno => DataReferencia.ToString("MMMM yyyy", PtBr);
+    private bool IsMesDiferenteDoAtual => DataReferencia.Year != DateTime.Today.Year || DataReferencia.Month != DateTime.Today.Month;
 
     private List<TransacaoItem> ItensFiltrados => TodasTransacoes
         .Where(t =>
         {
-            // Filtro por Tipo
             if (FiltroTipo != "Todos" && !string.Equals(t.Tipo, FiltroTipo, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            // Filtro por Status (apenas para despesas)
             if (FiltroStatus == "Paga" && (t.Tipo != "Despesa" || !t.Paga))
                 return false;
             if (FiltroStatus == "Pendente" && (t.Tipo != "Despesa" || t.Paga))
                 return false;
 
-            // Filtro por Busca Textual
             if (!string.IsNullOrWhiteSpace(TermoBusca))
             {
                 var matchDesc = t.Descricao.Contains(TermoBusca, StringComparison.OrdinalIgnoreCase);
@@ -166,6 +194,12 @@ else
 
     private async Task CarregarDadosAsync()
     {
+        var receitas = await FinanceService.GetReceitasMesAsync(DataReferencia.Year, DataReferencia.Month);
+        var despesas = await FinanceService.GetDespesasMesAsync(DataReferencia.Year, DataReferencia.Month);
+
+        TotalReceitasMes = receitas.Sum(r => r.Valor);
+        TotalDespesasMes = despesas.Sum(d => d.Valor);
+
         TodasTransacoes = await FinanceService.GetTransacoesMesAsync(DataReferencia.Year, DataReferencia.Month);
         StateHasChanged();
     }
@@ -188,23 +222,10 @@ else
         await CarregarDadosAsync();
     }
 
-    private void SetFiltroTipo(string tipo)
+    private void SetFiltro(string tipo, string status)
     {
         FiltroTipo = tipo;
-        FiltroStatus = "Todos";
-    }
-
-    private void SetFiltroStatus(string status)
-    {
-        if (FiltroStatus == status)
-        {
-            FiltroStatus = "Todos";
-        }
-        else
-        {
-            FiltroStatus = status;
-            FiltroTipo = "Despesa";
-        }
+        FiltroStatus = status;
     }
 
     private async Task EditarTransacao(TransacaoItem item)

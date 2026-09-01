@@ -62,6 +62,27 @@ public class FinanceWebService
 
     private void NotifyStateChanged() => OnChange?.Invoke();
 
+    // --- Métricas Globais ---
+    public async Task<decimal> GetSaldoGeralAcumuladoAsync()
+    {
+        await InicializarAsync();
+        var receitas = _receitas.Where(r => r.DeletedAt == null).Sum(r => r.Valor);
+        var despesas = _despesas.Where(d => d.DeletedAt == null).Sum(d => d.Valor);
+        return receitas - despesas;
+    }
+
+    public async Task<decimal> GetTotalReceitasGeraisAsync()
+    {
+        await InicializarAsync();
+        return _receitas.Where(r => r.DeletedAt == null).Sum(r => r.Valor);
+    }
+
+    public async Task<decimal> GetTotalDespesasGeraisAsync()
+    {
+        await InicializarAsync();
+        return _despesas.Where(d => d.DeletedAt == null).Sum(d => d.Valor);
+    }
+
     // --- Categorias ---
     public async Task<List<Categoria>> GetCategoriasAsync()
     {
@@ -323,13 +344,11 @@ public class FinanceWebService
 
         foreach (var descRecorrente in recorrentes)
         {
-            // Se esta despesa recorrente já é do mês atual, ignora
             if (descRecorrente.Data.Year == anoAtual && descRecorrente.Data.Month == mesAtual)
             {
                 continue;
             }
 
-            // Verifica se já existe uma despesa com mesma descrição e categoria no mês atual
             var jaExisteNoMes = _despesas.Any(d =>
                 d.DeletedAt == null &&
                 d.Data.Year == anoAtual &&
@@ -395,7 +414,6 @@ public class FinanceWebService
         }
         else
         {
-            // Mesclagem inteligente por ID
             foreach (var cat in package.Categorias ?? [])
             {
                 var idx = _categorias.FindIndex(c => c.Id == cat.Id);

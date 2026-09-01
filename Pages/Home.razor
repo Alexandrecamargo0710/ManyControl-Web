@@ -11,36 +11,60 @@
 
 <!-- Navegador de Mês -->
 <div class="month-selector">
-    <button class="month-btn" @onclick="MesAnterior">
+    <button class="month-btn" @onclick="MesAnterior" title="Mês anterior">
         <i class="bi bi-chevron-left"></i>
     </button>
-    <div class="month-label" @onclick="VoltarMesAtual" style="cursor: pointer;" title="Clique para voltar ao mês atual">
-        @NomeMesAno
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <div class="month-label" @onclick="VoltarMesAtual" style="cursor: pointer;" title="Clique para voltar ao mês atual">
+            @NomeMesAno
+        </div>
+        @if (IsMesDiferenteDoAtual)
+        {
+            <button style="background: transparent; border: none; color: var(--color-blue); font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 6px;" @onclick="VoltarMesAtual">
+                <i class="bi bi-arrow-counterclockwise"></i> Ir para o mês atual
+            </button>
+        }
     </div>
-    <button class="month-btn" @onclick="ProximoMes">
+    <button class="month-btn" @onclick="ProximoMes" title="Próximo mês">
         <i class="bi bi-chevron-right"></i>
     </button>
 </div>
 
-<!-- Cards de Resumo -->
+<!-- Cards de Resumo Grid 2x3 -->
 <div class="summary-grid">
-    <div class="summary-card full-width">
+    <!-- Balanço do Mês -->
+    <div class="summary-card">
         <div class="summary-header">
-            <span class="summary-title">Saldo Líquido do Mês</span>
-            <i class="bi bi-wallet2 summary-icon icon-blue"></i>
+            <span class="summary-title">Balanço do Mês</span>
+            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("balanco")' title="O que é?">ⓘ</span>
         </div>
-        <div class="summary-value @(SaldoMes >= 0 ? "value-green" : "value-red")">
-            @(SaldoMes >= 0 ? "+ " : "")@SaldoMes.ToString("C2", PtBr)
+        <div class="summary-value @(BalancoMes >= 0 ? "value-green" : "value-red")">
+            @(BalancoMes >= 0 ? "+ " : "")@BalancoMes.ToString("C2", PtBr)
         </div>
         <div class="summary-footer">
-            Resultado financeiro deste período
+            Receitas − Despesas deste mês
         </div>
     </div>
 
+    <!-- Saldo Geral (Conta) -->
+    <div class="summary-card" style="background: linear-gradient(135deg, #13122b 0%, #1a193d 100%); border-color: rgba(99, 102, 241, 0.3);">
+        <div class="summary-header">
+            <span class="summary-title" style="color: #c7d2fe;">Saldo Geral (Conta)</span>
+            <span class="summary-info-btn" style="color: #c7d2fe;" @onclick='() => ExplicarMetrica("saldo")' title="O que é?">ⓘ</span>
+        </div>
+        <div class="summary-value @(SaldoGeral >= 0 ? "value-green" : "value-red")">
+            @(SaldoGeral >= 0 ? "+ " : "")@SaldoGeral.ToString("C2", PtBr)
+        </div>
+        <div class="summary-footer" style="color: #818cf8;">
+            Acumulado de todas as contas
+        </div>
+    </div>
+
+    <!-- Receitas do Mês -->
     <div class="summary-card">
         <div class="summary-header">
             <span class="summary-title">Receitas</span>
-            <i class="bi bi-arrow-down-left summary-icon icon-green"></i>
+            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("receitas")'>ⓘ</span>
         </div>
         <div class="summary-value value-green">
             @TotalReceitas.ToString("C2", PtBr)
@@ -50,10 +74,11 @@
         </div>
     </div>
 
+    <!-- Despesas do Mês -->
     <div class="summary-card">
         <div class="summary-header">
             <span class="summary-title">Despesas</span>
-            <i class="bi bi-arrow-up-right summary-icon icon-red"></i>
+            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("despesas")'>ⓘ</span>
         </div>
         <div class="summary-value value-red">
             @TotalDespesas.ToString("C2", PtBr)
@@ -63,29 +88,31 @@
         </div>
     </div>
 
+    <!-- A Pagar (Pendente) -->
     <div class="summary-card">
         <div class="summary-header">
-            <span class="summary-title">Despesas Pagas</span>
-            <i class="bi bi-check2-all summary-icon icon-green"></i>
-        </div>
-        <div class="summary-value" style="color: #ffffff;">
-            @TotalPagas.ToString("C2", PtBr)
-        </div>
-        <div class="summary-footer">
-            Concluídas
-        </div>
-    </div>
-
-    <div class="summary-card">
-        <div class="summary-header">
-            <span class="summary-title">Pendentes</span>
-            <i class="bi bi-clock-history summary-icon icon-amber"></i>
+            <span class="summary-title">A Pagar (Pendente)</span>
+            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("pendentes")'>ⓘ</span>
         </div>
         <div class="summary-value" style="color: var(--color-amber);">
             @TotalPendentes.ToString("C2", PtBr)
         </div>
         <div class="summary-footer">
-            A pagar
+            Contas em aberto
+        </div>
+    </div>
+
+    <!-- Já Pago -->
+    <div class="summary-card">
+        <div class="summary-header">
+            <span class="summary-title">Já Pago</span>
+            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("pagas")'>ⓘ</span>
+        </div>
+        <div class="summary-value" style="color: var(--color-green);">
+            @TotalPagas.ToString("C2", PtBr)
+        </div>
+        <div class="summary-footer">
+            Contas liquidadas
         </div>
     </div>
 </div>
@@ -103,7 +130,7 @@
 <!-- Lista de Transações Recentes -->
 <div class="section-header">
     <div class="section-title">
-        <i class="bi bi-clock-history"></i> Lançamentos do Mês
+        <i class="bi bi-clock-history"></i> Lançamentos de @NomeMesAno
     </div>
     <div class="section-count">@Transacoes.Count registros</div>
 </div>
@@ -160,6 +187,27 @@ else
 
 <ModalTransacao @ref="modalTransacao" OnSaved="CarregarDadosAsync" />
 
+<!-- Modal Explicativo de Métricas -->
+@if (ExplicacaoTitulo != null)
+{
+    <div class="modal-overlay" @onclick="FecharExplicacao">
+        <div class="modal-sheet" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">@ExplicacaoTitulo</div>
+                <button class="btn-close-modal" @onclick="FecharExplicacao">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
+                @ExplicacaoTexto
+            </div>
+            <button class="btn-primary" @onclick="FecharExplicacao">
+                Entendi
+            </button>
+        </div>
+    </div>
+}
+
 @code {
     private static readonly System.Globalization.CultureInfo PtBr = new("pt-BR");
 
@@ -169,13 +217,18 @@ else
 
     private decimal TotalReceitas = 0;
     private decimal TotalDespesas = 0;
-    private decimal SaldoMes => TotalReceitas - TotalDespesas;
+    private decimal BalancoMes => TotalReceitas - TotalDespesas;
+    private decimal SaldoGeral = 0;
     private decimal TotalPagas = 0;
     private decimal TotalPendentes = 0;
     private int CountReceitas = 0;
     private int CountDespesas = 0;
 
+    private string? ExplicacaoTitulo;
+    private string? ExplicacaoTexto;
+
     private string NomeMesAno => DataReferencia.ToString("MMMM yyyy", PtBr);
+    private bool IsMesDiferenteDoAtual => DataReferencia.Year != DateTime.Today.Year || DataReferencia.Month != DateTime.Today.Month;
 
     protected override async Task OnInitializedAsync()
     {
@@ -199,6 +252,7 @@ else
         CountReceitas = receitas.Count;
         CountDespesas = despesas.Count;
 
+        SaldoGeral = await FinanceService.GetSaldoGeralAcumuladoAsync();
         Transacoes = await FinanceService.GetTransacoesMesAsync(ano, mes);
         StateHasChanged();
     }
@@ -242,5 +296,42 @@ else
         await JSRuntime.InvokeVoidAsync("manyControlJs.vibrate", 30);
         await FinanceService.TogglePagaDespesaAsync(item.Id);
         await CarregarDadosAsync();
+    }
+
+    private void ExplicarMetrica(string metrica)
+    {
+        switch (metrica.ToLowerInvariant())
+        {
+            case "balanco":
+                ExplicacaoTitulo = "Balanço do Mês";
+                ExplicacaoTexto = "É o que sobrou (ou faltou) exclusivamente neste mês selecionado.\n\n• Fórmula: Receitas do Mês − Despesas do Mês\n\nMostra se as suas contas fecharam no positivo ou negativo no período.";
+                break;
+            case "saldo":
+                ExplicacaoTitulo = "Saldo Geral (Conta)";
+                ExplicacaoTexto = "Representa o saldo financeiro acumulado total na sua conta, considerando todo o histórico de receitas e despesas registradas no ManyControl.";
+                break;
+            case "receitas":
+                ExplicacaoTitulo = "Receitas do Mês";
+                ExplicacaoTexto = "Soma de todas as entradas financeiras registradas neste mês (ex: salários, rendimentos, vendas).";
+                break;
+            case "despesas":
+                ExplicacaoTitulo = "Despesas do Mês";
+                ExplicacaoTexto = "Soma de todas as saídas e gastos cadastrados para este mês (inclui tanto contas já pagas quanto contas pendentes).";
+                break;
+            case "pendentes":
+                ExplicacaoTitulo = "A Pagar (Pendente)";
+                ExplicacaoTexto = "Total de contas deste mês que você ainda não marcou como pagas. Ideal para acompanhar o compromisso financeiro restante.";
+                break;
+            case "pagas":
+                ExplicacaoTitulo = "Já Pago";
+                ExplicacaoTexto = "Total de contas deste mês que já foram quitadas e pagas.";
+                break;
+        }
+    }
+
+    private void FecharExplicacao()
+    {
+        ExplicacaoTitulo = null;
+        ExplicacaoTexto = null;
     }
 }
