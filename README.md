@@ -33,32 +33,6 @@ Aplicação Web / PWA de **Controle Financeiro Pessoal**, construída com **.NET
 5. **Pronto!** O ícone do ManyControl aparecerá na tela inicial do seu iPhone e abrirá como um app nativo.
 
 ---
-
-## 💻 Como Rodar Localmente
-
-Certifique-se de ter o [.NET 10 SDK](https://dotnet.microsoft.com/download) instalado.
-
-```bash
-# Clone ou acesse a pasta do projeto
-cd ManyControl-Web
-
-# Restaure e execute o servidor de desenvolvimento
-dotnet watch
-```
-
-Abra no navegador em `http://localhost:5000` (ou a porta informada no terminal).
-
----
-
-## 🚀 Como Ativar o GitHub Pages no seu Repositório
-
-1. Crie um novo repositório no GitHub chamado **`ManyControl-Web`**.
-2. Suba o código deste diretório:
-   ```bash
-   git add .
-   git commit -m "feat: initial commit of ManyControl-Web PWA"
-   git branch -M main
-   git remote add origin https://github.com/SEU_USUARIO/ManyControl-Web.git
    git push -u origin main
    ```
 3. No GitHub, acesse: **Settings** > **Pages** > em **Build and deployment / Source**, selecione **Deploy from a branch** e escolha o branch **`gh-pages`** (pasta `/ (root)`).
