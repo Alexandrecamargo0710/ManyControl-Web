@@ -5,104 +5,79 @@
 @inject BackupService BackupService
 @inject IJSRuntime JSRuntime
 
-<PageTitle>ManyControl - Configurações</PageTitle>
+<PageTitle>ManyControl - Sincronização</PageTitle>
 
-<!-- Seção: Backup & Sincronização de Arquivo -->
-<div class="summary-card" style="margin-bottom: 20px;">
-    <div class="summary-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-cloud-arrow-down-fill summary-icon icon-blue"></i>
-            <span class="summary-title" style="font-size: 14px;">Backup & Sincronização</span>
-        </div>
-    </div>
-    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
-        Exporte ou importe seus dados em formato <code>manycontrol-sync.json</code>, 100% compatível com as versões Windows e Android.
+<!-- Card 1: Backup Local (Arquivo Físico) -->
+<div class="native-card">
+    <div style="font-size: 18px; font-weight: 700; color: #ffffff;">Backup Local (Arquivo Físico)</div>
+    <div style="font-size: 13px; color: var(--text-gray-400); line-height: 1.5;">
+        Exporte uma cópia de segurança física no seu dispositivo ou restaure um backup antigo a qualquer momento sem precisar de internet.
     </div>
 
-    <div class="actions-row" style="margin-bottom: 10px;">
-        <button class="btn-action" style="background: var(--bg-input); color: #ffffff; border: 1px solid var(--border-subtle);" @onclick="ExportarBackup">
-            <i class="bi bi-download"></i> Exportar JSON
-        </button>
-        <button class="btn-action" style="background: var(--bg-input); color: #ffffff; border: 1px solid var(--border-subtle);" @onclick="TriggerImportFile">
-            <i class="bi bi-upload"></i> Importar JSON
-        </button>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+        <button class="btn-native-gray" @onclick="ExportarBackup">Exportar Backup Local</button>
+        <button class="btn-native-gray" @onclick="TriggerImportFile">Restaurar de Arquivo</button>
     </div>
 
     <InputFile id="backupFileInput" OnChange="ProcessarArquivoImportado" style="display: none;" accept=".json" />
 
     @if (!string.IsNullOrEmpty(MensagemBackup))
     {
-        <div style="font-size: 12px; color: var(--color-green); margin-top: 8px; font-weight: 600;">
-            <i class="bi bi-check-circle-fill"></i> @MensagemBackup
+        <div style="font-size: 13px; color: #34d399; font-weight: 600; margin-top: 6px;">
+            ✓ @MensagemBackup
         </div>
     }
 </div>
 
-<!-- Seção: Gerenciador de Categorias -->
-<div class="summary-card" style="margin-bottom: 20px;">
-    <div class="summary-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-tags-fill summary-icon icon-purple"></i>
-            <span class="summary-title" style="font-size: 14px;">Categorias</span>
-        </div>
-        <span class="badge-tag">@Categorias.Count cadastradas</span>
+<!-- Card 2: Gerenciador de Categorias -->
+<div class="native-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 18px; font-weight: 700; color: #ffffff;">Gerenciar Categorias</div>
+        <span style="font-size: 12px; color: var(--text-gray-400);">@Categorias.Count cadastradas</span>
     </div>
 
-    <!-- Adicionar Nova Categoria -->
-    <div style="display: flex; gap: 8px; margin-bottom: 16px; margin-top: 8px;">
-        <input type="text" class="form-input" style="flex: 2;" placeholder="Nova categoria..." @bind="NovaCategoriaNome" />
-        <select class="form-input" style="flex: 1;" @bind="NovaCategoriaTipo">
+    <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <input type="text" class="native-input" style="flex: 2;" placeholder="Nome da categoria..." @bind="NovaCategoriaNome" />
+        <select class="native-input" style="flex: 1;" @bind="NovaCategoriaTipo">
             <option value="Despesa">Despesa</option>
             <option value="Receita">Receita</option>
         </select>
-        <button class="btn-action btn-receita" style="padding: 0 16px; font-size: 18px;" @onclick="AdicionarCategoriaAsync">
-            <i class="bi bi-plus-lg"></i>
-        </button>
+        <button class="btn-native-blue" style="padding: 0 16px; font-size: 16px;" @onclick="AdicionarCategoriaAsync">+</button>
     </div>
 
-    <!-- Lista de Categorias -->
-    <div style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto;">
+    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 240px; overflow-y: auto;">
         @foreach (var cat in Categorias)
         {
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-card-secondary); border-radius: 8px; border: 1px solid var(--border-card);">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i class="bi @(cat.Tipo == "Receita" ? "bi-arrow-down-left" : "bi-arrow-up-right")" style="color: @(cat.Tipo == "Receita" ? "var(--color-green)" : "var(--color-red)");"></i>
-                    <span style="font-weight: 600; color: #ffffff;">@cat.Nome</span>
-                    <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">(@cat.Tipo)</span>
+                    <span style="font-size: 14px; font-weight: 600; color: #ffffff;">@cat.Nome</span>
+                    <span style="font-size: 10px; color: var(--text-gray-500); text-transform: uppercase;">(@cat.Tipo)</span>
                 </div>
-                <button style="background: transparent; border: none; color: var(--text-muted); cursor: pointer;" @onclick="() => ExcluirCategoriaAsync(cat.Id)">
-                    <i class="bi bi-trash3"></i>
+                <button style="background: transparent; border: none; color: var(--color-red-btn); cursor: pointer; font-size: 13px;" @onclick="() => ExcluirCategoriaAsync(cat.Id)">
+                    Excluir
                 </button>
             </div>
         }
     </div>
 </div>
 
-<!-- Seção: Sobre e Instalação no iPhone -->
-<div class="summary-card" style="margin-bottom: 20px;">
-    <div class="summary-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-info-circle-fill summary-icon icon-blue"></i>
-            <span class="summary-title" style="font-size: 14px;">Sobre o ManyControl PWA</span>
-        </div>
-        <span class="badge-tag">v1.0.0</span>
-    </div>
-    <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
-        <p>• <strong>Offline & Local:</strong> Todos os seus dados ficam salvos de forma segura e privada no seu próprio dispositivo.</p>
-        <p>• <strong>Instalação no iOS:</strong> Abra no Safari, toque no ícone <strong>Compartilhar</strong> <i class="bi bi-box-arrow-up"></i> e selecione <strong>"Adicionar à Tela de Início"</strong>.</p>
+<!-- Card 3: Sobre e Dica PWA -->
+<div class="native-card">
+    <div style="font-size: 18px; font-weight: 700; color: #ffffff;">Sobre o ManyControl</div>
+    <div style="font-size: 13px; color: var(--text-gray-400); line-height: 1.6;">
+        <p>• <strong>Privacidade:</strong> Seus dados ficam salvos de forma privada no seu dispositivo.</p>
+        <p>• <strong>iPhone / Safari:</strong> Toque no ícone de <strong>Compartilhar</strong> e escolha <strong>"Adicionar à Tela de Início"</strong> para usar em tela cheia.</p>
     </div>
 </div>
 
-<!-- Zona de Perigo: Limpar Dados -->
-<div class="summary-card" style="border-color: rgba(239, 68, 68, 0.3);">
-    <div class="summary-header">
-        <span class="summary-title" style="color: var(--color-red);">Zona de Perigo</span>
+<!-- Card 4: Zona de Perigo -->
+<div class="native-card" style="border-color: #991b1b;">
+    <div style="font-size: 16px; font-weight: 700; color: #f87171;">Zona de Perigo</div>
+    <div style="font-size: 12px; color: var(--text-gray-400);">
+        Apaga todos os dados e retorna o app ao estado inicial de fábrica.
     </div>
-    <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
-        Esta ação apagará todos os lançamentos e restaurará as configurações originais do ManyControl neste dispositivo.
-    </div>
-    <button class="btn-danger" @onclick="ConfirmarLimpezaDadosAsync">
-        <i class="bi bi-exclamation-triangle-fill"></i> Resetar Todos os Dados
+    <button class="btn-native-red" style="margin-top: 6px;" @onclick="ConfirmarLimpezaDadosAsync">
+        Resetar Todos os Dados
     </button>
 </div>
 

@@ -1,152 +1,249 @@
 ﻿@page "/extrato"
 @using ManyControl_Web.Models
 @using ManyControl_Web.Services
-@using ManyControl_Web.Components
 @inject FinanceWebService FinanceService
 @inject IJSRuntime JSRuntime
 
 <PageTitle>ManyControl - Extrato</PageTitle>
 
-<!-- Navegador de Mês -->
-<div class="month-selector">
-    <button class="month-btn" @onclick="MesAnterior">
-        <i class="bi bi-chevron-left"></i>
-    </button>
-    <div style="display: flex; flex-direction: column; align-items: center;">
-        <div class="month-label" @onclick="VoltarMesAtual" style="cursor: pointer;">
-            @NomeMesAno
-        </div>
-        @if (IsMesDiferenteDoAtual)
-        {
-            <button style="background: transparent; border: none; color: var(--color-blue); font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 6px;" @onclick="VoltarMesAtual">
-                <i class="bi bi-arrow-counterclockwise"></i> Ir para o mês atual
-            </button>
-        }
+<!-- Barra de Navegação de Mês -->
+<div class="month-card">
+    <div class="month-controls">
+        <button class="month-btn-arrow" @onclick="MesAnterior">◀</button>
+        <div class="month-text-label">@NomeMesAno</div>
+        <button class="month-btn-arrow" @onclick="ProximoMes">▶</button>
     </div>
-    <button class="month-btn" @onclick="ProximoMes">
-        <i class="bi bi-chevron-right"></i>
-    </button>
+    @if (IsMesDiferenteDoAtual)
+    {
+        <button class="btn-current-month" @onclick="VoltarMesAtual">
+            Ir para o mês atual
+        </button>
+    }
 </div>
 
-<!-- Card de Comprometimento de Renda do Mês -->
+<!-- Cards de Totais do Mês -->
+<div class="metrics-grid">
+    <div class="metric-card card-receitas">
+        <div class="metric-card-header">
+            <span class="metric-card-title">Entradas do Mês</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("receitas")'>ⓘ</span>
+        </div>
+        <div class="metric-card-value">@TotalReceitasMes.ToString("C2", PtBr)</div>
+    </div>
+
+    <div class="metric-card card-despesas">
+        <div class="metric-card-header">
+            <span class="metric-card-title">Saídas do Mês</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("despesas")'>ⓘ</span>
+        </div>
+        <div class="metric-card-value">@TotalDespesasMes.ToString("C2", PtBr)</div>
+    </div>
+
+    <div class="metric-card card-pendentes">
+        <div class="metric-card-header">
+            <span class="metric-card-title">A Pagar (Pendente)</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("pendentes")'>ⓘ</span>
+        </div>
+        <div class="metric-card-value">@TotalDespesasPendentesMes.ToString("C2", PtBr)</div>
+    </div>
+
+    <div class="metric-card card-pagas">
+        <div class="metric-card-header">
+            <span class="metric-card-title">Já Pago</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("pagas")'>ⓘ</span>
+        </div>
+        <div class="metric-card-value">@TotalDespesasPagasMes.ToString("C2", PtBr)</div>
+    </div>
+</div>
+
+<!-- Card Balanço do Mês -->
+<div class="native-card" style="background-color: #1f2937; margin-top: -6px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 13px; color: #e5e7eb;">Balanço do Mês</span>
+            <span class="metric-card-info" style="color: #9ca3af;" @onclick='() => ExplicarMetrica("balanco")'>ⓘ</span>
+        </div>
+        <span style="font-size: 20px; font-weight: 700; color: #ffffff;">@SaldoMes.ToString("C2", PtBr)</span>
+    </div>
+</div>
+
+<!-- Barra Visual de Proporção Receitas vs Despesas -->
 @if (TotalReceitasMes > 0)
 {
-    <div class="summary-card" style="margin-bottom: 16px; padding: 12px 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 6px;">
-            <span style="color: var(--text-secondary); font-weight: 600;">Comprometimento da Renda</span>
-            <strong style="color: @(ProporcaoDespesas >= 1 ? "var(--color-red)" : ProporcaoDespesas >= 0.7 ? "var(--color-amber)" : "var(--color-green)");">
-                @((ProporcaoDespesas * 100).ToString("F0"))%
-            </strong>
+    <div class="native-card" style="padding: 14px 12px; margin-top: -6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 6px;">
+            <span style="color: #9ca3af;">Comprometimento das receitas</span>
+            <span style="color: #e5e7eb; font-weight: 700;">Despesas representam @((ProporcaoDespesas * 100).ToString("F0"))% das receitas</span>
         </div>
-        <div style="width: 100%; height: 8px; background: var(--bg-input); border-radius: 999px; overflow: hidden;">
-            <div style="width: @Math.Min(100, ProporcaoDespesas * 100)%; height: 100%; background: @(ProporcaoDespesas >= 1 ? "var(--color-red)" : ProporcaoDespesas >= 0.7 ? "var(--color-amber)" : "var(--color-green)"); transition: width 0.3s;"></div>
-        </div>
-        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
-            Despesas representam @((ProporcaoDespesas * 100).ToString("F0"))% das receitas deste mês
+        <div style="width: 100%; height: 6px; background-color: #065f46; border-radius: 999px; overflow: hidden;">
+            <div style="width: @Math.Min(100, ProporcaoDespesas * 100)%; height: 100%; background-color: #f87171; transition: width 0.3s;"></div>
         </div>
     </div>
 }
 
-<!-- Campo de Busca -->
-<div class="search-box">
-    <i class="bi bi-search"></i>
-    <input type="text" class="search-input" placeholder="Buscar por descrição ou categoria..." @bind="TermoBusca" @bind:event="oninput" />
-</div>
-
-<!-- Filtros Rápidos -->
-<div class="filter-bar">
-    <button class="chip-filter @(FiltroTipo == "Todos" && FiltroStatus == "Todos" ? "active" : "")" @onclick='() => SetFiltro("Todos", "Todos")'>
+<!-- Filtros Rápidos com Botões Proporcionais -->
+<div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px;">
+    <button class="@(FiltroTipo == "Todos" && FiltroStatus == "Todos" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Todos", "Todos")'>
         Todos
     </button>
-    <button class="chip-filter @(FiltroTipo == "Receita" ? "active" : "")" @onclick='() => SetFiltro("Receita", "Todos")'>
-        <i class="bi bi-arrow-down-left"></i> Receitas
+    <button class="@(FiltroTipo == "Receita" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Receita", "Todos")'>
+        Receitas
     </button>
-    <button class="chip-filter @(FiltroTipo == "Despesa" && FiltroStatus == "Todos" ? "active" : "")" @onclick='() => SetFiltro("Despesa", "Todos")'>
-        <i class="bi bi-arrow-up-right"></i> Despesas
+    <button class="@(FiltroTipo == "Despesa" && FiltroStatus == "Todos" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Despesa", "Todos")'>
+        Despesas
     </button>
-    <button class="chip-filter @(FiltroStatus == "Paga" ? "active" : "")" @onclick='() => SetFiltro("Despesa", "Paga")'>
-        <i class="bi bi-check2"></i> Pagas
+    <button class="@(FiltroStatus == "Paga" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Despesa", "Paga")'>
+        Pagas
     </button>
-    <button class="chip-filter @(FiltroStatus == "Pendente" ? "active" : "")" @onclick='() => SetFiltro("Despesa", "Pendente")'>
-        <i class="bi bi-hourglass-split"></i> Pendentes
+    <button class="@(FiltroStatus == "Pendente" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Despesa", "Pendente")'>
+        Pendentes
     </button>
 </div>
 
-<!-- Cabeçalho da Lista e Totalizador Filtrado -->
-<div class="section-header">
-    <div class="section-title">
-        <i class="bi bi-list-ul"></i> Extrato (@ItensFiltrados.Count)
-    </div>
-    <div class="section-count">
-        Total: <strong style="color: @(TotalFiltrado >= 0 ? "var(--color-green)" : "var(--color-red)");">@TotalFiltrado.ToString("C2", PtBr)</strong>
-    </div>
+<!-- Campo de Busca -->
+<div class="form-field" style="margin-bottom: 16px;">
+    <input type="text" class="native-input" placeholder="🔍 Buscar por descrição..." @bind="TermoBusca" @bind:event="oninput" />
+</div>
+
+<!-- Lista de Transações Filtradas -->
+<div style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">
+    Lançamentos (@ItensFiltrados.Count)
 </div>
 
 @if (ItensFiltrados.Count == 0)
 {
-    <div class="empty-state">
-        <div class="empty-icon"><i class="bi bi-search"></i></div>
-        <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Nenhum lançamento encontrado</div>
-        <div style="font-size: 13px;">Tente mudar o mês ou limpar os filtros de busca.</div>
+    <div style="padding: 24px; text-align: center; color: var(--text-gray-500); font-size: 13px; background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--border-card);">
+        Nenhum lançamento encontrado para os filtros selecionados.
     </div>
 }
 else
 {
-    <div class="transaction-list">
-        @foreach (var item in ItensFiltrados)
-        {
-            <div class="transaction-card" @onclick="() => EditarTransacao(item)">
-                <div class="trans-left">
-                    <div class="trans-icon @(item.Tipo == "Receita" ? "icon-green" : "icon-red")">
-                        <i class="bi @(item.Tipo == "Receita" ? "bi-arrow-down-left" : "bi-arrow-up-right")"></i>
-                    </div>
-                    <div class="trans-info">
-                        <div class="trans-desc">@item.Descricao</div>
-                        <div class="trans-meta">
-                            <span>@item.Data.ToString("dd/MM/yyyy")</span>
-                            <span class="badge-tag">@item.CategoriaNome</span>
-                            @if (item.Recorrente)
-                            {
-                                <span class="badge-recorrente"><i class="bi bi-repeat"></i> Fixa</span>
-                            }
-                        </div>
-                    </div>
-                </div>
-                <div class="trans-right">
-                    <div class="trans-val @(item.Tipo == "Receita" ? "value-green" : "value-red")">
-                        @(item.Tipo == "Receita" ? "+ " : "- ")@item.Valor.ToString("C2", PtBr)
-                    </div>
-                    @if (item.Tipo == "Despesa")
+    @foreach (var item in ItensFiltrados)
+    {
+        <div class="trans-item-card">
+            <div class="trans-item-top">
+                @if (item.Tipo == "Despesa")
+                {
+                    <span class="badge-status-pill @(item.Paga ? "badge-paga" : "badge-pendente")"
+                          @onclick="() => AlternarStatusDespesa(item)">
+                        @(item.Paga ? "✓ PAGA" : "⏳ PENDENTE")
+                    </span>
+                }
+                <span class="trans-title">@item.Descricao</span>
+                <span class="@(item.Tipo == "Receita" ? "trans-val-green" : "trans-val-red")">
+                    @(item.Tipo == "Receita" ? "+ " : "- ")@item.Valor.ToString("C2", PtBr)
+                </span>
+            </div>
+            <div class="trans-item-bottom">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span>@(item.Vencimento.HasValue ? $"Venc.: {item.Vencimento.Value:dd/MM/yyyy}" : $"Data: {item.Data:dd/MM/yyyy}")</span>
+                    @if (item.Recorrente)
                     {
-                        <div class="status-badge @(item.Paga ? "status-paga" : "status-pendente")"
-                             @onclick:stopPropagation="true"
-                             @onclick="() => ToggleStatusPaga(item)"
-                             title="Clique para alternar pago/pendente">
-                            <i class="bi @(item.Paga ? "bi-check-circle-fill" : "bi-hourglass-split")"></i>
-                            @(item.Paga ? "Paga" : "Pendente")
-                        </div>
+                        <span style="color: #a78bfa; font-size: 11px;">• Recorrente</span>
                     }
                 </div>
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn-small-edit" @onclick="() => AbrirEdicao(item)">Editar</button>
+                    <button class="btn-small-delete" @onclick="() => ExcluirTransacao(item)">Excluir</button>
+                </div>
             </div>
-        }
+        </div>
+    }
+}
+
+<!-- Modal de Edição -->
+@if (IsEditModalVisible)
+{
+    <div class="modal-overlay" @onclick="FecharModalEdicao">
+        <div class="modal-dialog-box" @onclick:stopPropagation="true">
+            <div class="modal-title-text">@EditModalTitle</div>
+            <div class="form-field">
+                <input type="text" class="native-input" placeholder="Descrição" @bind="EditDescricao" />
+            </div>
+            <div class="form-field">
+                <input type="number" step="0.01" class="native-input" placeholder="Valor" @bind="EditValor" />
+            </div>
+            <div class="form-field">
+                <label style="font-size: 12px; color: var(--text-gray-400); display: block; margin-bottom: 4px;">Data</label>
+                <input type="date" class="native-input" @bind="EditData" />
+            </div>
+
+            @if (IsEditingDespesa)
+            {
+                <div class="form-field">
+                    <label style="font-size: 12px; color: var(--text-gray-400); display: block; margin-bottom: 4px;">Data de Vencimento</label>
+                    <input type="date" class="native-input" @bind="EditVencimento" />
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 14px; color: #ffffff;">Despesa recorrente</span>
+                    <div class="toggle-switch" @onclick="() => EditRecorrente = !EditRecorrente">
+                        <input type="checkbox" checked="@EditRecorrente" />
+                        <span class="slider"></span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <span style="font-size: 14px; color: #ffffff;">Despesa já paga</span>
+                    <div class="toggle-switch" @onclick="() => EditPaga = !EditPaga">
+                        <input type="checkbox" checked="@EditPaga" />
+                        <span class="slider"></span>
+                    </div>
+                </div>
+            }
+
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+                <button class="btn-native-blue" style="flex: 1;" @onclick="SalvarEdicaoModal">Atualizar</button>
+                <button class="btn-native-gray" style="flex: 1;" @onclick="FecharModalEdicao">Cancelar</button>
+            </div>
+        </div>
     </div>
 }
 
-<ModalTransacao @ref="modalTransacao" OnSaved="CarregarDadosAsync" />
+<!-- Modal Explicativo -->
+@if (ExplicacaoTitulo != null)
+{
+    <div class="modal-overlay" @onclick="FecharExplicacao">
+        <div class="modal-dialog-box" @onclick:stopPropagation="true">
+            <div class="modal-title-text">@ExplicacaoTitulo</div>
+            <div style="font-size: 14px; color: var(--text-gray-300); line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
+                @ExplicacaoTexto
+            </div>
+            <button class="btn-native-blue" style="width: 100%;" @onclick="FecharExplicacao">
+                Entendi
+            </button>
+        </div>
+    </div>
+}
 
 @code {
     private static readonly System.Globalization.CultureInfo PtBr = new("pt-BR");
 
-    private ModalTransacao? modalTransacao;
     private DateTime DataReferencia = DateTime.Today;
     private List<TransacaoItem> TodasTransacoes = [];
     private decimal TotalReceitasMes = 0;
     private decimal TotalDespesasMes = 0;
+    private decimal SaldoMes => TotalReceitasMes - TotalDespesasMes;
+    private decimal TotalDespesasPagasMes = 0;
+    private decimal TotalDespesasPendentesMes = 0;
     private double ProporcaoDespesas => TotalReceitasMes > 0 ? (double)(TotalDespesasMes / TotalReceitasMes) : 0;
 
     private string TermoBusca = string.Empty;
     private string FiltroTipo = "Todos";
     private string FiltroStatus = "Todos";
+
+    // Modal de Edição
+    private bool IsEditModalVisible = false;
+    private bool IsEditingDespesa = false;
+    private Guid? EditId;
+    private string EditModalTitle = "Editar";
+    private string EditDescricao = string.Empty;
+    private decimal EditValor;
+    private DateTime EditData = DateTime.Today;
+    private DateTime? EditVencimento;
+    private bool EditRecorrente;
+    private bool EditPaga;
+
+    private string? ExplicacaoTitulo;
+    private string? ExplicacaoTexto;
 
     private string NomeMesAno => DataReferencia.ToString("MMMM yyyy", PtBr);
     private bool IsMesDiferenteDoAtual => DataReferencia.Year != DateTime.Today.Year || DataReferencia.Month != DateTime.Today.Month;
@@ -174,18 +271,6 @@ else
         })
         .ToList();
 
-    private decimal TotalFiltrado
-    {
-        get
-        {
-            var receitas = ItensFiltrados.Where(i => i.Tipo == "Receita").Sum(i => i.Valor);
-            var despesas = ItensFiltrados.Where(i => i.Tipo == "Despesa").Sum(i => i.Valor);
-            if (FiltroTipo == "Receita") return receitas;
-            if (FiltroTipo == "Despesa") return despesas;
-            return receitas - despesas;
-        }
-    }
-
     protected override async Task OnInitializedAsync()
     {
         FinanceService.OnChange += StateHasChanged;
@@ -199,6 +284,8 @@ else
 
         TotalReceitasMes = receitas.Sum(r => r.Valor);
         TotalDespesasMes = despesas.Sum(d => d.Valor);
+        TotalDespesasPagasMes = despesas.Where(d => d.Paga).Sum(d => d.Valor);
+        TotalDespesasPendentesMes = despesas.Where(d => !d.Paga).Sum(d => d.Valor);
 
         TodasTransacoes = await FinanceService.GetTransacoesMesAsync(DataReferencia.Year, DataReferencia.Month);
         StateHasChanged();
@@ -228,18 +315,113 @@ else
         FiltroStatus = status;
     }
 
-    private async Task EditarTransacao(TransacaoItem item)
-    {
-        if (modalTransacao != null)
-        {
-            await modalTransacao.AbrirEdicaoAsync(item);
-        }
-    }
-
-    private async Task ToggleStatusPaga(TransacaoItem item)
+    private async Task AlternarStatusDespesa(TransacaoItem item)
     {
         await JSRuntime.InvokeVoidAsync("manyControlJs.vibrate", 30);
         await FinanceService.TogglePagaDespesaAsync(item.Id);
         await CarregarDadosAsync();
+    }
+
+    private void AbrirEdicao(TransacaoItem item)
+    {
+        IsEditingDespesa = item.Tipo == "Despesa";
+        EditId = item.Id;
+        EditModalTitle = item.Tipo == "Despesa" ? "Editar Despesa" : "Editar Receita";
+        EditDescricao = item.Descricao;
+        EditValor = item.Valor;
+        EditData = item.Data;
+        EditVencimento = item.Vencimento;
+        EditRecorrente = item.Recorrente;
+        EditPaga = item.Paga;
+        IsEditModalVisible = true;
+    }
+
+    private async Task SalvarEdicaoModal()
+    {
+        if (string.IsNullOrWhiteSpace(EditDescricao) || EditValor <= 0 || !EditId.HasValue)
+            return;
+
+        if (IsEditingDespesa)
+        {
+            await FinanceService.UpdateDespesaAsync(new Despesa
+            {
+                Id = EditId.Value,
+                Descricao = EditDescricao.Trim(),
+                Valor = EditValor,
+                Data = EditData,
+                Vencimento = EditVencimento,
+                Recorrente = EditRecorrente,
+                Paga = EditPaga
+            });
+        }
+        else
+        {
+            await FinanceService.UpdateReceitaAsync(new Receita
+            {
+                Id = EditId.Value,
+                Descricao = EditDescricao.Trim(),
+                Valor = EditValor,
+                Data = EditData
+            });
+        }
+
+        FecharModalEdicao();
+        await CarregarDadosAsync();
+    }
+
+    private void FecharModalEdicao()
+    {
+        IsEditModalVisible = false;
+        EditId = null;
+    }
+
+    private async Task ExcluirTransacao(TransacaoItem item)
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Deseja excluir '{item.Descricao}'?");
+        if (confirm)
+        {
+            if (item.Tipo == "Receita")
+            {
+                await FinanceService.DeleteReceitaAsync(item.Id);
+            }
+            else
+            {
+                await FinanceService.DeleteDespesaAsync(item.Id);
+            }
+            await CarregarDadosAsync();
+        }
+    }
+
+    private void ExplicarMetrica(string metrica)
+    {
+        switch (metrica.ToLowerInvariant())
+        {
+            case "balanco":
+                ExplicacaoTitulo = "Balanço do Mês";
+                ExplicacaoTexto = "É o que sobrou (ou faltou) exclusivamente neste mês selecionado.\n\n• Fórmula: Receitas do Mês − Despesas do Mês\n\nMostra se as suas contas fecharam no positivo ou negativo no período.";
+                break;
+            case "receitas":
+                ExplicacaoTitulo = "Entradas do Mês";
+                ExplicacaoTexto = "Soma de todas as entradas financeiras registradas neste mês (ex: salários, rendimentos, vendas).";
+                break;
+            case "despesas":
+                ExplicacaoTitulo = "Saídas do Mês";
+                ExplicacaoTexto = "Soma de todas as saídas e gastos cadastrados para este mês (inclui tanto contas já pagas quanto contas pendentes).";
+                break;
+            case "pendentes":
+                ExplicacaoTitulo = "A Pagar (Pendente)";
+                ExplicacaoTexto = "Total de contas deste mês que você ainda não marcou como pagas. Ideal para acompanhar o compromisso financeiro restante.";
+                break;
+            case "pagas":
+                ExplicacaoTitulo = "Já Pago";
+                ExplicacaoTexto = "Total de contas deste mês que já foram quitadas e pagas.";
+                break;
+        }
+    }
+
+    private void FecharExplicacao()
+    {
+        ExplicacaoTitulo = null;
+        ExplicacaoTexto = null;
     }
 }

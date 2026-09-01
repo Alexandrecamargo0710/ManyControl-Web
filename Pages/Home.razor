@@ -3,205 +3,292 @@
 @using ManyControl_Web.Services
 @using ManyControl_Web.Components
 @inject FinanceWebService FinanceService
+@inject BackupService BackupService
 @inject IJSRuntime JSRuntime
 
 <PageTitle>ManyControl - Início</PageTitle>
 
 <PwaInstallPrompt />
 
-<!-- Navegador de Mês -->
-<div class="month-selector">
-    <button class="month-btn" @onclick="MesAnterior" title="Mês anterior">
-        <i class="bi bi-chevron-left"></i>
-    </button>
-    <div style="display: flex; flex-direction: column; align-items: center;">
-        <div class="month-label" @onclick="VoltarMesAtual" style="cursor: pointer;" title="Clique para voltar ao mês atual">
-            @NomeMesAno
-        </div>
-        @if (IsMesDiferenteDoAtual)
-        {
-            <button style="background: transparent; border: none; color: var(--color-blue); font-size: 11px; font-weight: 700; cursor: pointer; padding: 2px 6px;" @onclick="VoltarMesAtual">
-                <i class="bi bi-arrow-counterclockwise"></i> Ir para o mês atual
-            </button>
-        }
+<!-- Card de Sincronização -->
+<div class="native-card">
+    <div style="font-size: 14px; color: #ffffff;">Sincronização</div>
+    <div style="font-size: 18px; font-weight: 700; color: #ffffff;">@UltimaSincronizacaoTexto</div>
+    <div style="font-size: 12px; color: var(--text-gray-300);">Armazenamento local seguro do dispositivo</div>
+    <div style="font-size: 12px; color: #a7f3d0;">● Tudo sincronizado</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+        <button class="btn-native-blue" @onclick="SincronizarAgora">Sincronizar agora</button>
+        <button class="btn-native-gray" @onclick="TriggerImportBackup">Importar backup</button>
     </div>
-    <button class="month-btn" @onclick="ProximoMes" title="Próximo mês">
-        <i class="bi bi-chevron-right"></i>
-    </button>
+    <InputFile id="homeBackupFileInput" OnChange="ProcessarArquivoImportado" style="display: none;" accept=".json" />
 </div>
 
-<!-- Cards de Resumo Grid 2x3 -->
-<div class="summary-grid">
+<!-- Seletor de Mês do Início -->
+<div class="month-card">
+    <div class="month-controls">
+        <button class="month-btn-arrow" @onclick="MesAnterior">◀</button>
+        <div class="month-text-label">@NomeMesAno</div>
+        <button class="month-btn-arrow" @onclick="ProximoMes">▶</button>
+    </div>
+    @if (IsMesDiferenteDoAtual)
+    {
+        <button class="btn-current-month" @onclick="VoltarMesAtual">
+            Ir para o mês atual
+        </button>
+    }
+</div>
+
+<!-- Resumo Financeiro do Mês & Saldo Geral (Grid 2x3) -->
+<div class="metrics-grid">
     <!-- Balanço do Mês -->
-    <div class="summary-card">
-        <div class="summary-header">
-            <span class="summary-title">Balanço do Mês</span>
-            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("balanco")' title="O que é?">ⓘ</span>
+    <div class="metric-card card-balanco">
+        <div class="metric-card-header">
+            <span class="metric-card-title">Balanço do Mês</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("balanco")'>ⓘ</span>
         </div>
-        <div class="summary-value @(BalancoMes >= 0 ? "value-green" : "value-red")">
-            @(BalancoMes >= 0 ? "+ " : "")@BalancoMes.ToString("C2", PtBr)
-        </div>
-        <div class="summary-footer">
-            Receitas − Despesas deste mês
-        </div>
+        <div class="metric-card-value">@BalancoMes.ToString("C2", PtBr)</div>
     </div>
 
     <!-- Saldo Geral (Conta) -->
-    <div class="summary-card" style="background: linear-gradient(135deg, #13122b 0%, #1a193d 100%); border-color: rgba(99, 102, 241, 0.3);">
-        <div class="summary-header">
-            <span class="summary-title" style="color: #c7d2fe;">Saldo Geral (Conta)</span>
-            <span class="summary-info-btn" style="color: #c7d2fe;" @onclick='() => ExplicarMetrica("saldo")' title="O que é?">ⓘ</span>
+    <div class="metric-card card-saldo">
+        <div class="metric-card-header">
+            <span class="metric-card-title">Saldo Geral (Conta)</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("saldo")'>ⓘ</span>
         </div>
-        <div class="summary-value @(SaldoGeral >= 0 ? "value-green" : "value-red")">
-            @(SaldoGeral >= 0 ? "+ " : "")@SaldoGeral.ToString("C2", PtBr)
-        </div>
-        <div class="summary-footer" style="color: #818cf8;">
-            Acumulado de todas as contas
-        </div>
+        <div class="metric-card-value">@SaldoGeral.ToString("C2", PtBr)</div>
     </div>
 
     <!-- Receitas do Mês -->
-    <div class="summary-card">
-        <div class="summary-header">
-            <span class="summary-title">Receitas</span>
-            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("receitas")'>ⓘ</span>
+    <div class="metric-card card-receitas">
+        <div class="metric-card-header">
+            <span class="metric-card-title">Receitas do Mês</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("receitas")'>ⓘ</span>
         </div>
-        <div class="summary-value value-green">
-            @TotalReceitas.ToString("C2", PtBr)
-        </div>
-        <div class="summary-footer">
-            @CountReceitas lançamento(s)
-        </div>
+        <div class="metric-card-value">@TotalReceitas.ToString("C2", PtBr)</div>
     </div>
 
     <!-- Despesas do Mês -->
-    <div class="summary-card">
-        <div class="summary-header">
-            <span class="summary-title">Despesas</span>
-            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("despesas")'>ⓘ</span>
+    <div class="metric-card card-despesas">
+        <div class="metric-card-header">
+            <span class="metric-card-title">Despesas do Mês</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("despesas")'>ⓘ</span>
         </div>
-        <div class="summary-value value-red">
-            @TotalDespesas.ToString("C2", PtBr)
-        </div>
-        <div class="summary-footer">
-            @CountDespesas lançamento(s)
-        </div>
+        <div class="metric-card-value">@TotalDespesas.ToString("C2", PtBr)</div>
     </div>
 
     <!-- A Pagar (Pendente) -->
-    <div class="summary-card">
-        <div class="summary-header">
-            <span class="summary-title">A Pagar (Pendente)</span>
-            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("pendentes")'>ⓘ</span>
+    <div class="metric-card card-pendentes">
+        <div class="metric-card-header">
+            <span class="metric-card-title">A Pagar (Pendente)</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("pendentes")'>ⓘ</span>
         </div>
-        <div class="summary-value" style="color: var(--color-amber);">
-            @TotalPendentes.ToString("C2", PtBr)
-        </div>
-        <div class="summary-footer">
-            Contas em aberto
-        </div>
+        <div class="metric-card-value">@TotalPendentes.ToString("C2", PtBr)</div>
     </div>
 
     <!-- Já Pago -->
-    <div class="summary-card">
-        <div class="summary-header">
-            <span class="summary-title">Já Pago</span>
-            <span class="summary-info-btn" @onclick='() => ExplicarMetrica("pagas")'>ⓘ</span>
+    <div class="metric-card card-pagas">
+        <div class="metric-card-header">
+            <span class="metric-card-title">Já Pago</span>
+            <span class="metric-card-info" @onclick='() => ExplicarMetrica("pagas")'>ⓘ</span>
         </div>
-        <div class="summary-value" style="color: var(--color-green);">
-            @TotalPagas.ToString("C2", PtBr)
-        </div>
-        <div class="summary-footer">
-            Contas liquidadas
-        </div>
+        <div class="metric-card-value">@TotalPagas.ToString("C2", PtBr)</div>
     </div>
 </div>
 
-<!-- Ações Rápidas -->
-<div class="actions-row">
-    <button class="btn-action btn-receita" @onclick='() => AbrirNovoModal("Receita")'>
-        <i class="bi bi-plus-circle-fill"></i> Nova Receita
-    </button>
-    <button class="btn-action btn-despesa" @onclick='() => AbrirNovoModal("Despesa")'>
-        <i class="bi bi-dash-circle-fill"></i> Nova Despesa
-    </button>
+<!-- Card: Adicionar Receita -->
+<div class="native-card">
+    <div style="font-size: 20px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">Adicionar receita</div>
+    <div class="form-field">
+        <input type="text" class="native-input" placeholder="Descrição" @bind="NovaReceitaDescricao" />
+    </div>
+    <div class="form-field">
+        <input type="number" step="0.01" class="native-input" placeholder="Valor" @bind="NovaReceitaValor" />
+    </div>
+    <div class="form-field">
+        <input type="date" class="native-input" @bind="NovaReceitaData" />
+    </div>
+    <div style="display: flex; gap: 12px; margin-top: 4px;">
+        <button class="btn-native-blue" @onclick="SalvarNovaReceita">Salvar receita</button>
+        <button class="btn-native-gray" @onclick="LimparNovaReceita">Cancelar</button>
+    </div>
 </div>
 
-<!-- Lista de Transações Recentes -->
-<div class="section-header">
-    <div class="section-title">
-        <i class="bi bi-clock-history"></i> Lançamentos de @NomeMesAno
+<!-- Card: Adicionar Despesa -->
+<div class="native-card">
+    <div style="font-size: 20px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">Adicionar despesa</div>
+    <div class="form-field">
+        <input type="text" class="native-input" placeholder="Descrição" @bind="NovaDespesaDescricao" />
     </div>
-    <div class="section-count">@Transacoes.Count registros</div>
+    <div class="form-field">
+        <input type="number" step="0.01" class="native-input" placeholder="Valor" @bind="NovaDespesaValor" />
+    </div>
+    <div class="form-field">
+        <label style="font-size: 12px; color: var(--text-gray-400); display: block; margin-bottom: 4px;">Data do lançamento</label>
+        <input type="date" class="native-input" @bind="NovaDespesaData" />
+    </div>
+    <div class="form-field">
+        <label style="font-size: 12px; color: var(--text-gray-400); display: block; margin-bottom: 4px;">Data de vencimento (opcional)</label>
+        <input type="date" class="native-input" @bind="NovaDespesaVencimento" />
+    </div>
+
+    <!-- Switch Recorrente -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 6px 0;">
+        <div>
+            <div style="font-size: 14px; color: #ffffff;">Despesa recorrente</div>
+            <div style="font-size: 12px; color: var(--text-gray-500);">Ative caso essa despesa se repete todo mês</div>
+        </div>
+        <div class="toggle-switch" @onclick="() => NovaDespesaRecorrente = !NovaDespesaRecorrente">
+            <input type="checkbox" checked="@NovaDespesaRecorrente" />
+            <span class="slider"></span>
+        </div>
+    </div>
+
+    <!-- Switch Paga -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 6px 0;">
+        <div>
+            <div style="font-size: 14px; color: #ffffff;">Despesa já paga</div>
+            <div style="font-size: 12px; color: var(--text-gray-500);">Marque se esta conta já foi quitada</div>
+        </div>
+        <div class="toggle-switch" @onclick="() => NovaDespesaPaga = !NovaDespesaPaga">
+            <input type="checkbox" checked="@NovaDespesaPaga" />
+            <span class="slider"></span>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 12px;">
+        <button class="btn-native-blue" @onclick="SalvarNovaDespesa">Salvar despesa</button>
+        <button class="btn-native-gray" @onclick="LimparNovaDespesa">Cancelar</button>
+    </div>
 </div>
 
-@if (Transacoes.Count == 0)
-{
-    <div class="empty-state">
-        <div class="empty-icon"><i class="bi bi-inbox"></i></div>
-        <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Nenhum lançamento neste mês</div>
-        <div style="font-size: 13px; margin-bottom: 16px;">Clique nos botões acima para cadastrar receitas e despesas.</div>
-    </div>
-}
-else
-{
-    <div class="transaction-list">
-        @foreach (var item in Transacoes)
+<!-- Lista de Despesas do Mês -->
+<div style="margin-top: 20px; margin-bottom: 24px;">
+    <div style="font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">Despesas do mês</div>
+    @if (DespesasDoMes.Count == 0)
+    {
+        <div style="padding: 16px; text-align: center; color: var(--text-gray-500); font-size: 13px; background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--border-card);">
+            Nenhuma despesa cadastrada para este mês.
+        </div>
+    }
+    else
+    {
+        @foreach (var desp in DespesasDoMes)
         {
-            <div class="transaction-card" @onclick="() => EditarTransacao(item)">
-                <div class="trans-left">
-                    <div class="trans-icon @(item.Tipo == "Receita" ? "icon-green" : "icon-red")">
-                        <i class="bi @(item.Tipo == "Receita" ? "bi-arrow-down-left" : "bi-arrow-up-right")"></i>
-                    </div>
-                    <div class="trans-info">
-                        <div class="trans-desc">@item.Descricao</div>
-                        <div class="trans-meta">
-                            <span>@item.Data.ToString("dd/MM/yyyy")</span>
-                            <span class="badge-tag">@item.CategoriaNome</span>
-                            @if (item.Recorrente)
-                            {
-                                <span class="badge-recorrente"><i class="bi bi-repeat"></i> Fixa</span>
-                            }
-                        </div>
-                    </div>
+            <div class="trans-item-card">
+                <div class="trans-item-top">
+                    <!-- Badge Interativo de Status Paga/Pendente -->
+                    <span class="badge-status-pill @(desp.Paga ? "badge-paga" : "badge-pendente")"
+                          @onclick="() => AlternarStatusDespesa(desp)">
+                        @(desp.Paga ? "✓ PAGA" : "⏳ PENDENTE")
+                    </span>
+                    <span class="trans-title">@desp.Descricao</span>
+                    <span class="trans-val-red">- @desp.Valor.ToString("C2", PtBr)</span>
                 </div>
-                <div class="trans-right">
-                    <div class="trans-val @(item.Tipo == "Receita" ? "value-green" : "value-red")">
-                        @(item.Tipo == "Receita" ? "+ " : "- ")@item.Valor.ToString("C2", PtBr)
+                <div class="trans-item-bottom">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span>@(desp.Vencimento.HasValue ? $"Venc.: {desp.Vencimento.Value:dd/MM/yyyy}" : $"Data: {desp.Data:dd/MM/yyyy}")</span>
+                        @if (desp.Recorrente)
+                        {
+                            <span style="color: #a78bfa; font-size: 11px;">• Recorrente</span>
+                        }
                     </div>
-                    @if (item.Tipo == "Despesa")
-                    {
-                        <div class="status-badge @(item.Paga ? "status-paga" : "status-pendente")"
-                             @onclick:stopPropagation="true"
-                             @onclick="() => ToggleStatusPaga(item)"
-                             title="Clique para alternar pago/pendente">
-                            <i class="bi @(item.Paga ? "bi-check-circle-fill" : "bi-hourglass-split")"></i>
-                            @(item.Paga ? "Paga" : "Pendente")
-                        </div>
-                    }
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-small-edit" @onclick="() => AbrirModalEdicaoDespesa(desp)">Editar</button>
+                        <button class="btn-small-delete" @onclick="() => ExcluirDespesa(desp.Id)">Excluir</button>
+                    </div>
                 </div>
             </div>
         }
+    }
+</div>
+
+<!-- Lista de Receitas do Mês -->
+<div style="margin-bottom: 24px;">
+    <div style="font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">Receitas do mês</div>
+    @if (ReceitasDoMes.Count == 0)
+    {
+        <div style="padding: 16px; text-align: center; color: var(--text-gray-500); font-size: 13px; background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--border-card);">
+            Nenhuma receita cadastrada para este mês.
+        </div>
+    }
+    else
+    {
+        @foreach (var rec in ReceitasDoMes)
+        {
+            <div class="trans-item-card">
+                <div class="trans-item-top">
+                    <span class="trans-title">@rec.Descricao</span>
+                    <span class="trans-val-green">+ @rec.Valor.ToString("C2", PtBr)</span>
+                </div>
+                <div class="trans-item-bottom">
+                    <span>Data: @rec.Data.ToString("dd/MM/yyyy")</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-small-edit" @onclick="() => AbrirModalEdicaoReceita(rec)">Editar</button>
+                        <button class="btn-small-delete" @onclick="() => ExcluirReceita(rec.Id)">Excluir</button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Modal de Edição (Idêntico ao nativo) -->
+@if (IsEditModalVisible)
+{
+    <div class="modal-overlay" @onclick="FecharModalEdicao">
+        <div class="modal-dialog-box" @onclick:stopPropagation="true">
+            <div class="modal-title-text">@EditModalTitle</div>
+            <div class="form-field">
+                <input type="text" class="native-input" placeholder="Descrição" @bind="EditDescricao" />
+            </div>
+            <div class="form-field">
+                <input type="number" step="0.01" class="native-input" placeholder="Valor" @bind="EditValor" />
+            </div>
+            <div class="form-field">
+                <label style="font-size: 12px; color: var(--text-gray-400); display: block; margin-bottom: 4px;">Data</label>
+                <input type="date" class="native-input" @bind="EditData" />
+            </div>
+
+            @if (IsEditingDespesa)
+            {
+                <div class="form-field">
+                    <label style="font-size: 12px; color: var(--text-gray-400); display: block; margin-bottom: 4px;">Data de Vencimento</label>
+                    <input type="date" class="native-input" @bind="EditVencimento" />
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 14px; color: #ffffff;">Despesa recorrente</span>
+                    <div class="toggle-switch" @onclick="() => EditRecorrente = !EditRecorrente">
+                        <input type="checkbox" checked="@EditRecorrente" />
+                        <span class="slider"></span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <span style="font-size: 14px; color: #ffffff;">Despesa já paga</span>
+                    <div class="toggle-switch" @onclick="() => EditPaga = !EditPaga">
+                        <input type="checkbox" checked="@EditPaga" />
+                        <span class="slider"></span>
+                    </div>
+                </div>
+            }
+
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+                <button class="btn-native-blue" style="flex: 1;" @onclick="SalvarEdicaoModal">Atualizar</button>
+                <button class="btn-native-gray" style="flex: 1;" @onclick="FecharModalEdicao">Cancelar</button>
+            </div>
+        </div>
     </div>
 }
-
-<ModalTransacao @ref="modalTransacao" OnSaved="CarregarDadosAsync" />
 
 <!-- Modal Explicativo de Métricas -->
 @if (ExplicacaoTitulo != null)
 {
     <div class="modal-overlay" @onclick="FecharExplicacao">
-        <div class="modal-sheet" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <div class="modal-title">@ExplicacaoTitulo</div>
-                <button class="btn-close-modal" @onclick="FecharExplicacao">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
+        <div class="modal-dialog-box" @onclick:stopPropagation="true">
+            <div class="modal-title-text">@ExplicacaoTitulo</div>
+            <div style="font-size: 14px; color: var(--text-gray-300); line-height: 1.6; white-space: pre-line; margin-bottom: 20px;">
                 @ExplicacaoTexto
             </div>
-            <button class="btn-primary" @onclick="FecharExplicacao">
+            <button class="btn-native-blue" style="width: 100%;" @onclick="FecharExplicacao">
                 Entendi
             </button>
         </div>
@@ -211,9 +298,9 @@ else
 @code {
     private static readonly System.Globalization.CultureInfo PtBr = new("pt-BR");
 
-    private ModalTransacao? modalTransacao;
     private DateTime DataReferencia = DateTime.Today;
-    private List<TransacaoItem> Transacoes = [];
+    private List<Receita> ReceitasDoMes = [];
+    private List<Despesa> DespesasDoMes = [];
 
     private decimal TotalReceitas = 0;
     private decimal TotalDespesas = 0;
@@ -221,8 +308,32 @@ else
     private decimal SaldoGeral = 0;
     private decimal TotalPagas = 0;
     private decimal TotalPendentes = 0;
-    private int CountReceitas = 0;
-    private int CountDespesas = 0;
+    private string UltimaSincronizacaoTexto = "Sincronizado agora";
+
+    // Form Nova Receita
+    private string NovaReceitaDescricao = string.Empty;
+    private decimal? NovaReceitaValor;
+    private DateTime NovaReceitaData = DateTime.Today;
+
+    // Form Nova Despesa
+    private string NovaDespesaDescricao = string.Empty;
+    private decimal? NovaDespesaValor;
+    private DateTime NovaDespesaData = DateTime.Today;
+    private DateTime? NovaDespesaVencimento;
+    private bool NovaDespesaRecorrente = false;
+    private bool NovaDespesaPaga = false;
+
+    // Modal de Edição
+    private bool IsEditModalVisible = false;
+    private bool IsEditingDespesa = false;
+    private Guid? EditId;
+    private string EditModalTitle = "Editar";
+    private string EditDescricao = string.Empty;
+    private decimal EditValor;
+    private DateTime EditData = DateTime.Today;
+    private DateTime? EditVencimento;
+    private bool EditRecorrente;
+    private bool EditPaga;
 
     private string? ExplicacaoTitulo;
     private string? ExplicacaoTexto;
@@ -241,19 +352,16 @@ else
         var ano = DataReferencia.Year;
         var mes = DataReferencia.Month;
 
-        var receitas = await FinanceService.GetReceitasMesAsync(ano, mes);
-        var despesas = await FinanceService.GetDespesasMesAsync(ano, mes);
+        ReceitasDoMes = await FinanceService.GetReceitasMesAsync(ano, mes);
+        DespesasDoMes = await FinanceService.GetDespesasMesAsync(ano, mes);
 
-        TotalReceitas = receitas.Sum(r => r.Valor);
-        TotalDespesas = despesas.Sum(d => d.Valor);
-        TotalPagas = despesas.Where(d => d.Paga).Sum(d => d.Valor);
-        TotalPendentes = despesas.Where(d => !d.Paga).Sum(d => d.Valor);
-
-        CountReceitas = receitas.Count;
-        CountDespesas = despesas.Count;
+        TotalReceitas = ReceitasDoMes.Sum(r => r.Valor);
+        TotalDespesas = DespesasDoMes.Sum(d => d.Valor);
+        TotalPagas = DespesasDoMes.Where(d => d.Paga).Sum(d => d.Valor);
+        TotalPendentes = DespesasDoMes.Where(d => !d.Paga).Sum(d => d.Valor);
 
         SaldoGeral = await FinanceService.GetSaldoGeralAcumuladoAsync();
-        Transacoes = await FinanceService.GetTransacoesMesAsync(ano, mes);
+        UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
         StateHasChanged();
     }
 
@@ -275,27 +383,172 @@ else
         await CarregarDadosAsync();
     }
 
-    private async Task AbrirNovoModal(string tipo)
+    private async Task SalvarNovaReceita()
     {
-        if (modalTransacao != null)
+        if (string.IsNullOrWhiteSpace(NovaReceitaDescricao) || !NovaReceitaValor.HasValue || NovaReceitaValor <= 0)
+            return;
+
+        await FinanceService.AddReceitaAsync(new Receita
         {
-            await modalTransacao.AbrirNovoAsync(tipo, DataReferencia);
-        }
+            Descricao = NovaReceitaDescricao.Trim(),
+            Valor = NovaReceitaValor.Value,
+            Data = NovaReceitaData
+        });
+
+        LimparNovaReceita();
+        await CarregarDadosAsync();
     }
 
-    private async Task EditarTransacao(TransacaoItem item)
+    private void LimparNovaReceita()
     {
-        if (modalTransacao != null)
-        {
-            await modalTransacao.AbrirEdicaoAsync(item);
-        }
+        NovaReceitaDescricao = string.Empty;
+        NovaReceitaValor = null;
+        NovaReceitaData = DateTime.Today;
     }
 
-    private async Task ToggleStatusPaga(TransacaoItem item)
+    private async Task SalvarNovaDespesa()
+    {
+        if (string.IsNullOrWhiteSpace(NovaDespesaDescricao) || !NovaDespesaValor.HasValue || NovaDespesaValor <= 0)
+            return;
+
+        await FinanceService.AddDespesaAsync(new Despesa
+        {
+            Descricao = NovaDespesaDescricao.Trim(),
+            Valor = NovaDespesaValor.Value,
+            Data = NovaDespesaData,
+            Vencimento = NovaDespesaVencimento,
+            Recorrente = NovaDespesaRecorrente,
+            Paga = NovaDespesaPaga
+        });
+
+        LimparNovaDespesa();
+        await CarregarDadosAsync();
+    }
+
+    private void LimparNovaDespesa()
+    {
+        NovaDespesaDescricao = string.Empty;
+        NovaDespesaValor = null;
+        NovaDespesaData = DateTime.Today;
+        NovaDespesaVencimento = null;
+        NovaDespesaRecorrente = false;
+        NovaDespesaPaga = false;
+    }
+
+    private async Task AlternarStatusDespesa(Despesa desp)
     {
         await JSRuntime.InvokeVoidAsync("manyControlJs.vibrate", 30);
-        await FinanceService.TogglePagaDespesaAsync(item.Id);
+        await FinanceService.TogglePagaDespesaAsync(desp.Id);
         await CarregarDadosAsync();
+    }
+
+    private void AbrirModalEdicaoReceita(Receita rec)
+    {
+        IsEditingDespesa = false;
+        EditId = rec.Id;
+        EditModalTitle = "Editar Receita";
+        EditDescricao = rec.Descricao;
+        EditValor = rec.Valor;
+        EditData = rec.Data;
+        IsEditModalVisible = true;
+    }
+
+    private void AbrirModalEdicaoDespesa(Despesa desp)
+    {
+        IsEditingDespesa = true;
+        EditId = desp.Id;
+        EditModalTitle = "Editar Despesa";
+        EditDescricao = desp.Descricao;
+        EditValor = desp.Valor;
+        EditData = desp.Data;
+        EditVencimento = desp.Vencimento;
+        EditRecorrente = desp.Recorrente;
+        EditPaga = desp.Paga;
+        IsEditModalVisible = true;
+    }
+
+    private async Task SalvarEdicaoModal()
+    {
+        if (string.IsNullOrWhiteSpace(EditDescricao) || EditValor <= 0 || !EditId.HasValue)
+            return;
+
+        if (IsEditingDespesa)
+        {
+            await FinanceService.UpdateDespesaAsync(new Despesa
+            {
+                Id = EditId.Value,
+                Descricao = EditDescricao.Trim(),
+                Valor = EditValor,
+                Data = EditData,
+                Vencimento = EditVencimento,
+                Recorrente = EditRecorrente,
+                Paga = EditPaga
+            });
+        }
+        else
+        {
+            await FinanceService.UpdateReceitaAsync(new Receita
+            {
+                Id = EditId.Value,
+                Descricao = EditDescricao.Trim(),
+                Valor = EditValor,
+                Data = EditData
+            });
+        }
+
+        FecharModalEdicao();
+        await CarregarDadosAsync();
+    }
+
+    private void FecharModalEdicao()
+    {
+        IsEditModalVisible = false;
+        EditId = null;
+    }
+
+    private async Task ExcluirReceita(Guid id)
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Deseja excluir esta receita?");
+        if (confirm)
+        {
+            await FinanceService.DeleteReceitaAsync(id);
+            await CarregarDadosAsync();
+        }
+    }
+
+    private async Task ExcluirDespesa(Guid id)
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Deseja excluir esta despesa?");
+        if (confirm)
+        {
+            await FinanceService.DeleteDespesaAsync(id);
+            await CarregarDadosAsync();
+        }
+    }
+
+    private async Task SincronizarAgora()
+    {
+        UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
+        await BackupService.ExportarBackupAsync();
+    }
+
+    private async Task TriggerImportBackup()
+    {
+        await JSRuntime.InvokeVoidAsync("manyControlJs.triggerFileInput", "homeBackupFileInput");
+    }
+
+    private async Task ProcessarArquivoImportado(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+            using var reader = new System.IO.StreamReader(file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+            var json = await reader.ReadToEndAsync();
+            await BackupService.ImportarBackupJsonAsync(json, false);
+            await CarregarDadosAsync();
+        }
+        catch { }
     }
 
     private void ExplicarMetrica(string metrica)
@@ -308,7 +561,7 @@ else
                 break;
             case "saldo":
                 ExplicacaoTitulo = "Saldo Geral (Conta)";
-                ExplicacaoTexto = "Representa o saldo financeiro acumulado total na sua conta, considerando todo o histórico de receitas e despesas registradas no ManyControl.";
+                ExplicacaoTexto = "Representa o saldo financeiro acumulado na sua conta considerando todo o histórico de receitas e despesas registradas no ManyControl.";
                 break;
             case "receitas":
                 ExplicacaoTitulo = "Receitas do Mês";
