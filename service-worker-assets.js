@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "NgchC84i",
+  "version": "3OXRlNzb",
   "assets": [
     {
       "hash": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
@@ -10,8 +10,8 @@ self.assetsManifest = {
       "url": "404.html"
     },
     {
-      "hash": "sha256-8FmLBqvu1rACLrS20iSJnQGeDmUOKkNBDUTj6IaHn4U=",
-      "url": "_framework/ManyControl-Web.oidy57g151.wasm"
+      "hash": "sha256-KKCuGDYLMX0KES+/L7dWZadwqk/AsfgS/mtMW/INfhQ=",
+      "url": "_framework/ManyControl-Web.8cbz4qx9p8.wasm"
     },
     {
       "hash": "sha256-vI9KGAwO4PKnXTe48gdTMozUGHi7FMiPdbiC5KUno/c=",
@@ -182,8 +182,8 @@ self.assetsManifest = {
       "url": "_framework/blazor.webassembly.w3qd1tpl0e.js"
     },
     {
-      "hash": "sha256-bPjEnZIsgfHO22saR3LpLd1vp1NMqmExKyQzHHYsZQc=",
-      "url": "_framework/dotnet.kkvf2alf0s.js"
+      "hash": "sha256-vGd25f5jBFLy8m0t3JAj0tJAoOG99gpT1+QPDovgrLs=",
+      "url": "_framework/dotnet.kwvnf26yk0.js"
     },
     {
       "hash": "sha256-hYigRhIZKHyCXxXWqL/yR3ZWzZhV2oSi+2N3/UPeoxk=",
@@ -211,6 +211,10 @@ self.assetsManifest = {
     },
     {
       "hash": "sha256-HbJAUYCSJrpSob7biL7NwfgPlw86iauvHeLaYSZOhaE=",
+      "url": "app_logo.png"
+    },
+    {
+      "hash": "sha256-HbJAUYCSJrpSob7biL7NwfgPlw86iauvHeLaYSZOhaE=",
       "url": "apple-touch-icon.png"
     },
     {
@@ -222,6 +226,10 @@ self.assetsManifest = {
       "url": "favicon.png"
     },
     {
+      "hash": "sha256-StbReG5AQCju3YJwO9NTauyRkF4zYKjxZY2Jo+01YHw=",
+      "url": "google_logo.svg"
+    },
+    {
       "hash": "sha256-HbJAUYCSJrpSob7biL7NwfgPlw86iauvHeLaYSZOhaE=",
       "url": "icon-192.png"
     },
@@ -230,11 +238,11 @@ self.assetsManifest = {
       "url": "icon-512.png"
     },
     {
-      "hash": "sha256-IYd7NWARs7jQLh7A2N36BFsqVgDy64mFiJb3FAfDAdU=",
+      "hash": "sha256-59RY03s98k2xHXfMuXWNR4Nopny+KTo1MX2+sewrHI8=",
       "url": "index.html"
     },
     {
-      "hash": "sha256-Ijxgtc85hzxH3+R36w2/fxPHSc5OKicPEq8c3njKprM=",
+      "hash": "sha256-hZq6+0gSSta4De4Nl17VokzzX5CoRZmqJu3nd8tltOk=",
       "url": "js/app.js"
     },
     {
