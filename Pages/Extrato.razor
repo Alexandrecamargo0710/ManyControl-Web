@@ -1,0 +1,224 @@
+﻿@page "/extrato"
+@using ManyControl_Web.Models
+@using ManyControl_Web.Services
+@using ManyControl_Web.Components
+@inject FinanceWebService FinanceService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>ManyControl - Extrato</PageTitle>
+
+<!-- Navegador de Mês -->
+<div class="month-selector">
+    <button class="month-btn" @onclick="MesAnterior">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <div class="month-label" @onclick="VoltarMesAtual" style="cursor: pointer;">
+        @NomeMesAno
+    </div>
+    <button class="month-btn" @onclick="ProximoMes">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+</div>
+
+<!-- Campo de Busca -->
+<div class="search-box">
+    <i class="bi bi-search"></i>
+    <input type="text" class="search-input" placeholder="Buscar lançamento ou categoria..." @bind="TermoBusca" @bind:event="oninput" />
+</div>
+
+<!-- Filtros Rápidos -->
+<div class="filter-bar">
+    <button class="chip-filter @(FiltroTipo == "Todos" ? "active" : "")" @onclick='() => SetFiltroTipo("Todos")'>
+        Todos
+    </button>
+    <button class="chip-filter @(FiltroTipo == "Receita" ? "active" : "")" @onclick='() => SetFiltroTipo("Receita")'>
+        <i class="bi bi-arrow-down-left"></i> Receitas
+    </button>
+    <button class="chip-filter @(FiltroTipo == "Despesa" ? "active" : "")" @onclick='() => SetFiltroTipo("Despesa")'>
+        <i class="bi bi-arrow-up-right"></i> Despesas
+    </button>
+    <button class="chip-filter @(FiltroStatus == "Paga" ? "active" : "")" @onclick='() => SetFiltroStatus("Paga")'>
+        <i class="bi bi-check2"></i> Pagas
+    </button>
+    <button class="chip-filter @(FiltroStatus == "Pendente" ? "active" : "")" @onclick='() => SetFiltroStatus("Pendente")'>
+        <i class="bi bi-hourglass-split"></i> Pendentes
+    </button>
+</div>
+
+<!-- Cabeçalho da Lista e Totalizador Filtrado -->
+<div class="section-header">
+    <div class="section-title">
+        <i class="bi bi-list-ul"></i> Extrato Detalhado
+    </div>
+    <div class="section-count">
+        Total: <strong style="color: @(TotalFiltrado >= 0 ? "var(--color-green)" : "var(--color-red)");">@TotalFiltrado.ToString("C2", PtBr)</strong>
+    </div>
+</div>
+
+@if (ItensFiltrados.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon"><i class="bi bi-search"></i></div>
+        <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Nenhum registro encontrado</div>
+        <div style="font-size: 13px;">Tente ajustar os filtros ou o termo de busca.</div>
+    </div>
+}
+else
+{
+    <div class="transaction-list">
+        @foreach (var item in ItensFiltrados)
+        {
+            <div class="transaction-card" @onclick="() => EditarTransacao(item)">
+                <div class="trans-left">
+                    <div class="trans-icon @(item.Tipo == "Receita" ? "icon-green" : "icon-red")">
+                        <i class="bi @(item.Tipo == "Receita" ? "bi-arrow-down-left" : "bi-arrow-up-right")"></i>
+                    </div>
+                    <div class="trans-info">
+                        <div class="trans-desc">@item.Descricao</div>
+                        <div class="trans-meta">
+                            <span>@item.Data.ToString("dd/MM/yyyy")</span>
+                            <span class="badge-tag">@item.CategoriaNome</span>
+                            @if (item.Recorrente)
+                            {
+                                <span class="badge-recorrente"><i class="bi bi-repeat"></i> Fixa</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="trans-right">
+                    <div class="trans-val @(item.Tipo == "Receita" ? "value-green" : "value-red")">
+                        @(item.Tipo == "Receita" ? "+ " : "- ")@item.Valor.ToString("C2", PtBr)
+                    </div>
+                    @if (item.Tipo == "Despesa")
+                    {
+                        <div class="status-badge @(item.Paga ? "status-paga" : "status-pendente")"
+                             @onclick:stopPropagation="true"
+                             @onclick="() => ToggleStatusPaga(item)"
+                             title="Clique para alternar pago/pendente">
+                            <i class="bi @(item.Paga ? "bi-check-circle-fill" : "bi-hourglass-split")"></i>
+                            @(item.Paga ? "Paga" : "Pendente")
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<ModalTransacao @ref="modalTransacao" OnSaved="CarregarDadosAsync" />
+
+@code {
+    private static readonly System.Globalization.CultureInfo PtBr = new("pt-BR");
+
+    private ModalTransacao? modalTransacao;
+    private DateTime DataReferencia = DateTime.Today;
+    private List<TransacaoItem> TodasTransacoes = [];
+
+    private string TermoBusca = string.Empty;
+    private string FiltroTipo = "Todos";
+    private string FiltroStatus = "Todos";
+
+    private string NomeMesAno => DataReferencia.ToString("MMMM yyyy", PtBr);
+
+    private List<TransacaoItem> ItensFiltrados => TodasTransacoes
+        .Where(t =>
+        {
+            // Filtro por Tipo
+            if (FiltroTipo != "Todos" && !string.Equals(t.Tipo, FiltroTipo, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            // Filtro por Status (apenas para despesas)
+            if (FiltroStatus == "Paga" && (t.Tipo != "Despesa" || !t.Paga))
+                return false;
+            if (FiltroStatus == "Pendente" && (t.Tipo != "Despesa" || t.Paga))
+                return false;
+
+            // Filtro por Busca Textual
+            if (!string.IsNullOrWhiteSpace(TermoBusca))
+            {
+                var matchDesc = t.Descricao.Contains(TermoBusca, StringComparison.OrdinalIgnoreCase);
+                var matchCat = t.CategoriaNome.Contains(TermoBusca, StringComparison.OrdinalIgnoreCase);
+                if (!matchDesc && !matchCat)
+                    return false;
+            }
+
+            return true;
+        })
+        .ToList();
+
+    private decimal TotalFiltrado
+    {
+        get
+        {
+            var receitas = ItensFiltrados.Where(i => i.Tipo == "Receita").Sum(i => i.Valor);
+            var despesas = ItensFiltrados.Where(i => i.Tipo == "Despesa").Sum(i => i.Valor);
+            if (FiltroTipo == "Receita") return receitas;
+            if (FiltroTipo == "Despesa") return despesas;
+            return receitas - despesas;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        FinanceService.OnChange += StateHasChanged;
+        await CarregarDadosAsync();
+    }
+
+    private async Task CarregarDadosAsync()
+    {
+        TodasTransacoes = await FinanceService.GetTransacoesMesAsync(DataReferencia.Year, DataReferencia.Month);
+        StateHasChanged();
+    }
+
+    private async Task MesAnterior()
+    {
+        DataReferencia = DataReferencia.AddMonths(-1);
+        await CarregarDadosAsync();
+    }
+
+    private async Task ProximoMes()
+    {
+        DataReferencia = DataReferencia.AddMonths(1);
+        await CarregarDadosAsync();
+    }
+
+    private async Task VoltarMesAtual()
+    {
+        DataReferencia = DateTime.Today;
+        await CarregarDadosAsync();
+    }
+
+    private void SetFiltroTipo(string tipo)
+    {
+        FiltroTipo = tipo;
+        FiltroStatus = "Todos";
+    }
+
+    private void SetFiltroStatus(string status)
+    {
+        if (FiltroStatus == status)
+        {
+            FiltroStatus = "Todos";
+        }
+        else
+        {
+            FiltroStatus = status;
+            FiltroTipo = "Despesa";
+        }
+    }
+
+    private async Task EditarTransacao(TransacaoItem item)
+    {
+        if (modalTransacao != null)
+        {
+            await modalTransacao.AbrirEdicaoAsync(item);
+        }
+    }
+
+    private async Task ToggleStatusPaga(TransacaoItem item)
+    {
+        await JSRuntime.InvokeVoidAsync("manyControlJs.vibrate", 30);
+        await FinanceService.TogglePagaDespesaAsync(item.Id);
+        await CarregarDadosAsync();
+    }
+}

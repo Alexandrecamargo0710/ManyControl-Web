@@ -1,0 +1,19 @@
+﻿@inherits LayoutComponentBase
+
+<div class="app-layout">
+    <header class="main-content" style="padding-bottom: 0;">
+        <div class="app-header">
+            <div class="brand-wrapper">
+                <img src="icon-192.png" alt="ManyControl" class="brand-icon" />
+                <div class="brand-name">ManyControl</div>
+            </div>
+            <div class="header-badge">Web PWA</div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        @Body
+    </main>
+
+    <ManyControl_Web.Components.BottomNav />
+</div>

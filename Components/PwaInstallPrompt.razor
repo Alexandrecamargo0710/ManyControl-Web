@@ -1,0 +1,41 @@
+﻿@inject IJSRuntime JSRuntime
+
+@if (ShowBanner)
+{
+    <div class="pwa-banner">
+        <i class="bi bi-phone-fill pwa-banner-icon"></i>
+        <div class="pwa-banner-text">
+            <strong>Instale no seu iPhone / Celular</strong>
+            <span>Toque no botão <strong>Compartilhar</strong> <i class="bi bi-box-arrow-up"></i> e depois em <strong>"Adicionar à Tela de Início"</strong>.</span>
+        </div>
+        <button class="pwa-close-btn" @onclick="Dismiss">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+}
+
+@code {
+    private bool ShowBanner = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var isStandalone = await JSRuntime.InvokeAsync<bool>("manyControlJs.isStandalone");
+            var isIos = await JSRuntime.InvokeAsync<bool>("manyControlJs.isIos");
+            var dismissed = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "manycontrol_dismiss_pwa");
+
+            if (!isStandalone && dismissed != "true")
+            {
+                ShowBanner = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task Dismiss()
+    {
+        ShowBanner = false;
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "manycontrol_dismiss_pwa", "true");
+    }
+}

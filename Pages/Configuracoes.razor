@@ -1,0 +1,189 @@
+﻿@page "/configuracoes"
+@using ManyControl_Web.Models
+@using ManyControl_Web.Services
+@inject FinanceWebService FinanceService
+@inject BackupService BackupService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>ManyControl - Configurações</PageTitle>
+
+<!-- Seção: Backup & Sincronização de Arquivo -->
+<div class="summary-card" style="margin-bottom: 20px;">
+    <div class="summary-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-cloud-arrow-down-fill summary-icon icon-blue"></i>
+            <span class="summary-title" style="font-size: 14px;">Backup & Sincronização</span>
+        </div>
+    </div>
+    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+        Exporte ou importe seus dados em formato <code>manycontrol-sync.json</code>, 100% compatível com as versões Windows e Android.
+    </div>
+
+    <div class="actions-row" style="margin-bottom: 10px;">
+        <button class="btn-action" style="background: var(--bg-input); color: #ffffff; border: 1px solid var(--border-subtle);" @onclick="ExportarBackup">
+            <i class="bi bi-download"></i> Exportar JSON
+        </button>
+        <button class="btn-action" style="background: var(--bg-input); color: #ffffff; border: 1px solid var(--border-subtle);" @onclick="TriggerImportFile">
+            <i class="bi bi-upload"></i> Importar JSON
+        </button>
+    </div>
+
+    <InputFile id="backupFileInput" OnChange="ProcessarArquivoImportado" style="display: none;" accept=".json" />
+
+    @if (!string.IsNullOrEmpty(MensagemBackup))
+    {
+        <div style="font-size: 12px; color: var(--color-green); margin-top: 8px; font-weight: 600;">
+            <i class="bi bi-check-circle-fill"></i> @MensagemBackup
+        </div>
+    }
+</div>
+
+<!-- Seção: Gerenciador de Categorias -->
+<div class="summary-card" style="margin-bottom: 20px;">
+    <div class="summary-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-tags-fill summary-icon icon-purple"></i>
+            <span class="summary-title" style="font-size: 14px;">Categorias</span>
+        </div>
+        <span class="badge-tag">@Categorias.Count cadastradas</span>
+    </div>
+
+    <!-- Adicionar Nova Categoria -->
+    <div style="display: flex; gap: 8px; margin-bottom: 16px; margin-top: 8px;">
+        <input type="text" class="form-input" style="flex: 2;" placeholder="Nova categoria..." @bind="NovaCategoriaNome" />
+        <select class="form-input" style="flex: 1;" @bind="NovaCategoriaTipo">
+            <option value="Despesa">Despesa</option>
+            <option value="Receita">Receita</option>
+        </select>
+        <button class="btn-action btn-receita" style="padding: 0 16px; font-size: 18px;" @onclick="AdicionarCategoriaAsync">
+            <i class="bi bi-plus-lg"></i>
+        </button>
+    </div>
+
+    <!-- Lista de Categorias -->
+    <div style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto;">
+        @foreach (var cat in Categorias)
+        {
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="bi @(cat.Tipo == "Receita" ? "bi-arrow-down-left" : "bi-arrow-up-right")" style="color: @(cat.Tipo == "Receita" ? "var(--color-green)" : "var(--color-red)");"></i>
+                    <span style="font-weight: 600; color: #ffffff;">@cat.Nome</span>
+                    <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">(@cat.Tipo)</span>
+                </div>
+                <button style="background: transparent; border: none; color: var(--text-muted); cursor: pointer;" @onclick="() => ExcluirCategoriaAsync(cat.Id)">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Seção: Sobre e Instalação no iPhone -->
+<div class="summary-card" style="margin-bottom: 20px;">
+    <div class="summary-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-info-circle-fill summary-icon icon-blue"></i>
+            <span class="summary-title" style="font-size: 14px;">Sobre o ManyControl PWA</span>
+        </div>
+        <span class="badge-tag">v1.0.0</span>
+    </div>
+    <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+        <p>• <strong>Offline & Local:</strong> Todos os seus dados ficam salvos de forma segura e privada no seu próprio dispositivo.</p>
+        <p>• <strong>Instalação no iOS:</strong> Abra no Safari, toque no ícone <strong>Compartilhar</strong> <i class="bi bi-box-arrow-up"></i> e selecione <strong>"Adicionar à Tela de Início"</strong>.</p>
+    </div>
+</div>
+
+<!-- Zona de Perigo: Limpar Dados -->
+<div class="summary-card" style="border-color: rgba(239, 68, 68, 0.3);">
+    <div class="summary-header">
+        <span class="summary-title" style="color: var(--color-red);">Zona de Perigo</span>
+    </div>
+    <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Esta ação apagará todos os lançamentos e restaurará as configurações originais do ManyControl neste dispositivo.
+    </div>
+    <button class="btn-danger" @onclick="ConfirmarLimpezaDadosAsync">
+        <i class="bi bi-exclamation-triangle-fill"></i> Resetar Todos os Dados
+    </button>
+</div>
+
+@code {
+    private List<Categoria> Categorias = [];
+    private string NovaCategoriaNome = string.Empty;
+    private string NovaCategoriaTipo = "Despesa";
+    private string MensagemBackup = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarCategoriasAsync();
+    }
+
+    private async Task CarregarCategoriasAsync()
+    {
+        Categorias = await FinanceService.GetCategoriasAsync();
+        StateHasChanged();
+    }
+
+    private async Task AdicionarCategoriaAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NovaCategoriaNome)) return;
+
+        await FinanceService.AddCategoriaAsync(NovaCategoriaNome, NovaCategoriaTipo);
+        NovaCategoriaNome = string.Empty;
+        await CarregarCategoriasAsync();
+    }
+
+    private async Task ExcluirCategoriaAsync(Guid id)
+    {
+        await FinanceService.DeleteCategoriaAsync(id);
+        await CarregarCategoriasAsync();
+    }
+
+    private async Task ExportarBackup()
+    {
+        await BackupService.ExportarBackupAsync();
+        MensagemBackup = "Arquivo de backup exportado com sucesso!";
+    }
+
+    private async Task TriggerImportFile()
+    {
+        await JSRuntime.InvokeVoidAsync("manyControlJs.triggerFileInput", "backupFileInput");
+    }
+
+    private async Task ProcessarArquivoImportado(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+
+            using var reader = new System.IO.StreamReader(file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+            var json = await reader.ReadToEndAsync();
+
+            var sucesso = await BackupService.ImportarBackupJsonAsync(json, sobrescrever: false);
+            if (sucesso)
+            {
+                MensagemBackup = "Dados importados e sincronizados com sucesso!";
+                await CarregarCategoriasAsync();
+            }
+            else
+            {
+                MensagemBackup = "Formato de arquivo inválido.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensagemBackup = $"Erro ao importar: {ex.Message}";
+        }
+    }
+
+    private async Task ConfirmarLimpezaDadosAsync()
+    {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Tem certeza que deseja apagar todos os dados financeiros deste dispositivo? Esta ação não pode ser desfeita.");
+        if (confirm)
+        {
+            await FinanceService.LimparTodosDadosAsync();
+            await CarregarCategoriasAsync();
+            MensagemBackup = "Todos os dados foram resetados com sucesso.";
+        }
+    }
+}

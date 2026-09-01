@@ -1,0 +1,253 @@
+﻿@using ManyControl_Web.Models
+@using ManyControl_Web.Services
+@inject FinanceWebService FinanceService
+
+@if (IsOpen)
+{
+    <div class="modal-overlay" @onclick="Fechar">
+        <div class="modal-sheet" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title">
+                    @(IsEdicao ? (Tipo == "Receita" ? "Editar Receita" : "Editar Despesa") : (Tipo == "Receita" ? "Nova Receita" : "Nova Despesa"))
+                </div>
+                <button class="btn-close-modal" @onclick="Fechar">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <form @onsubmit="SalvarAsync">
+                <!-- Tipo Selector (se for novo lançamento) -->
+                @if (!IsEdicao)
+                {
+                    <div class="actions-row" style="margin-bottom: 16px;">
+                        <button type="button" class="btn-action" style="background: @(Tipo == "Receita" ? "var(--color-green)" : "var(--bg-input)"); color: @(Tipo == "Receita" ? "#042416" : "var(--text-secondary)");" @onclick='() => MudarTipo("Receita")'>
+                            <i class="bi bi-arrow-down-left"></i> Receita
+                        </button>
+                        <button type="button" class="btn-action" style="background: @(Tipo == "Despesa" ? "var(--color-red)" : "var(--bg-input)"); color: @(Tipo == "Despesa" ? "#ffffff" : "var(--text-secondary)");" @onclick='() => MudarTipo("Despesa")'>
+                            <i class="bi bi-arrow-up-right"></i> Despesa
+                        </button>
+                    </div>
+                }
+
+                <!-- Descrição -->
+                <div class="form-group">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" class="form-input" placeholder="Ex: Salário, Mercado, Combustível..." @bind="Descricao" required autofocus />
+                </div>
+
+                <!-- Valor -->
+                <div class="form-group">
+                    <label class="form-label">Valor (R$)</label>
+                    <input type="number" step="0.01" min="0.01" class="form-input" placeholder="0,00" @bind="Valor" required />
+                </div>
+
+                <!-- Categoria -->
+                <div class="form-group">
+                    <label class="form-label">Categoria</label>
+                    <select class="form-input" @bind="CategoriaId">
+                        <option value="">Selecione uma categoria...</option>
+                        @foreach (var cat in Categorias)
+                        {
+                            <option value="@cat.Id">@cat.Nome</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Data -->
+                <div class="form-group">
+                    <label class="form-label">Data</label>
+                    <input type="date" class="form-input" @bind="Data" required />
+                </div>
+
+                <!-- Campos específicos de Despesa -->
+                @if (Tipo == "Despesa")
+                {
+                    <div class="form-group">
+                        <label class="form-label">Data de Vencimento (Opcional)</label>
+                        <input type="date" class="form-input" @bind="Vencimento" />
+                    </div>
+
+                    <div class="form-toggle" @onclick="() => Paga = !Paga">
+                        <div style="font-weight: 600; color: #ffffff;">Despesa já está Paga?</div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" checked="@Paga" />
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-toggle" @onclick="() => Recorrente = !Recorrente">
+                        <div>
+                            <div style="font-weight: 600; color: #ffffff;">Despesa Recorrente?</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">Repete todo mês automaticamente</div>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" checked="@Recorrente" />
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                }
+
+                <button type="submit" class="btn-primary" style="background: @(Tipo == "Receita" ? "var(--color-green)" : "var(--color-red)"); color: @(Tipo == "Receita" ? "#042416" : "#ffffff"); margin-top: 8px;">
+                    <i class="bi bi-check2-circle"></i> Salvar Lançamento
+                </button>
+
+                @if (IsEdicao)
+                {
+                    <button type="button" class="btn-danger" @onclick="ExcluirAsync">
+                        <i class="bi bi-trash3"></i> Excluir Lançamento
+                    </button>
+                }
+            </form>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    public bool IsOpen { get; private set; }
+    public bool IsEdicao { get; private set; }
+    public Guid? ItemId { get; private set; }
+    public string Tipo { get; private set; } = "Despesa";
+    public string Descricao { get; set; } = string.Empty;
+    public decimal Valor { get; set; }
+    public DateTime Data { get; set; } = DateTime.Today;
+    public DateTime? Vencimento { get; set; }
+    public Guid? CategoriaId { get; set; }
+    public bool Paga { get; set; }
+    public bool Recorrente { get; set; }
+
+    private List<Categoria> Categorias = [];
+
+    public async Task AbrirNovoAsync(string tipo = "Despesa", DateTime? dataReferencia = null)
+    {
+        IsEdicao = false;
+        ItemId = null;
+        Tipo = tipo;
+        Descricao = string.Empty;
+        Valor = 0;
+        Data = dataReferencia ?? DateTime.Today;
+        Vencimento = null;
+        CategoriaId = null;
+        Paga = tipo == "Receita";
+        Recorrente = false;
+
+        await CarregarCategoriasAsync();
+        IsOpen = true;
+        StateHasChanged();
+    }
+
+    public async Task AbrirEdicaoAsync(TransacaoItem item)
+    {
+        IsEdicao = true;
+        ItemId = item.Id;
+        Tipo = item.Tipo;
+        Descricao = item.Descricao;
+        Valor = item.Valor;
+        Data = item.Data;
+        Vencimento = item.Vencimento;
+        CategoriaId = item.CategoriaId;
+        Paga = item.Paga;
+        Recorrente = item.Recorrente;
+
+        await CarregarCategoriasAsync();
+        IsOpen = true;
+        StateHasChanged();
+    }
+
+    private async Task MudarTipo(string novoTipo)
+    {
+        Tipo = novoTipo;
+        Paga = novoTipo == "Receita";
+        await CarregarCategoriasAsync();
+    }
+
+    private async Task CarregarCategoriasAsync()
+    {
+        Categorias = await FinanceService.GetCategoriasPorTipoAsync(Tipo);
+        if (CategoriaId.HasValue && !Categorias.Any(c => c.Id == CategoriaId.Value))
+        {
+            CategoriaId = Categorias.FirstOrDefault()?.Id;
+        }
+    }
+
+    public void Fechar()
+    {
+        IsOpen = false;
+        StateHasChanged();
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Descricao) || Valor <= 0)
+        {
+            return;
+        }
+
+        if (Tipo == "Receita")
+        {
+            var receita = new Receita
+            {
+                Id = ItemId ?? Guid.NewGuid(),
+                Descricao = Descricao.Trim(),
+                Valor = Valor,
+                Data = Data,
+                CategoriaId = CategoriaId
+            };
+
+            if (IsEdicao)
+            {
+                await FinanceService.UpdateReceitaAsync(receita);
+            }
+            else
+            {
+                await FinanceService.AddReceitaAsync(receita);
+            }
+        }
+        else
+        {
+            var despesa = new Despesa
+            {
+                Id = ItemId ?? Guid.NewGuid(),
+                Descricao = Descricao.Trim(),
+                Valor = Valor,
+                Data = Data,
+                Vencimento = Vencimento,
+                CategoriaId = CategoriaId,
+                Paga = Paga,
+                Recorrente = Recorrente,
+                DataPagamento = Paga ? (Data) : null
+            };
+
+            if (IsEdicao)
+            {
+                await FinanceService.UpdateDespesaAsync(despesa);
+            }
+            else
+            {
+                await FinanceService.AddDespesaAsync(despesa);
+            }
+        }
+
+        Fechar();
+        await OnSaved.InvokeAsync();
+    }
+
+    private async Task ExcluirAsync()
+    {
+        if (ItemId.HasValue)
+        {
+            if (Tipo == "Receita")
+            {
+                await FinanceService.DeleteReceitaAsync(ItemId.Value);
+            }
+            else
+            {
+                await FinanceService.DeleteDespesaAsync(ItemId.Value);
+            }
+        }
+
+        Fechar();
+        await OnSaved.InvokeAsync();
+    }
+}

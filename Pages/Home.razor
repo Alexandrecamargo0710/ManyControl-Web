@@ -1,0 +1,246 @@
+﻿@page "/"
+@using ManyControl_Web.Models
+@using ManyControl_Web.Services
+@using ManyControl_Web.Components
+@inject FinanceWebService FinanceService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>ManyControl - Início</PageTitle>
+
+<PwaInstallPrompt />
+
+<!-- Navegador de Mês -->
+<div class="month-selector">
+    <button class="month-btn" @onclick="MesAnterior">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <div class="month-label" @onclick="VoltarMesAtual" style="cursor: pointer;" title="Clique para voltar ao mês atual">
+        @NomeMesAno
+    </div>
+    <button class="month-btn" @onclick="ProximoMes">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+</div>
+
+<!-- Cards de Resumo -->
+<div class="summary-grid">
+    <div class="summary-card full-width">
+        <div class="summary-header">
+            <span class="summary-title">Saldo Líquido do Mês</span>
+            <i class="bi bi-wallet2 summary-icon icon-blue"></i>
+        </div>
+        <div class="summary-value @(SaldoMes >= 0 ? "value-green" : "value-red")">
+            @(SaldoMes >= 0 ? "+ " : "")@SaldoMes.ToString("C2", PtBr)
+        </div>
+        <div class="summary-footer">
+            Resultado financeiro deste período
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-header">
+            <span class="summary-title">Receitas</span>
+            <i class="bi bi-arrow-down-left summary-icon icon-green"></i>
+        </div>
+        <div class="summary-value value-green">
+            @TotalReceitas.ToString("C2", PtBr)
+        </div>
+        <div class="summary-footer">
+            @CountReceitas lançamento(s)
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-header">
+            <span class="summary-title">Despesas</span>
+            <i class="bi bi-arrow-up-right summary-icon icon-red"></i>
+        </div>
+        <div class="summary-value value-red">
+            @TotalDespesas.ToString("C2", PtBr)
+        </div>
+        <div class="summary-footer">
+            @CountDespesas lançamento(s)
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-header">
+            <span class="summary-title">Despesas Pagas</span>
+            <i class="bi bi-check2-all summary-icon icon-green"></i>
+        </div>
+        <div class="summary-value" style="color: #ffffff;">
+            @TotalPagas.ToString("C2", PtBr)
+        </div>
+        <div class="summary-footer">
+            Concluídas
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-header">
+            <span class="summary-title">Pendentes</span>
+            <i class="bi bi-clock-history summary-icon icon-amber"></i>
+        </div>
+        <div class="summary-value" style="color: var(--color-amber);">
+            @TotalPendentes.ToString("C2", PtBr)
+        </div>
+        <div class="summary-footer">
+            A pagar
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="actions-row">
+    <button class="btn-action btn-receita" @onclick='() => AbrirNovoModal("Receita")'>
+        <i class="bi bi-plus-circle-fill"></i> Nova Receita
+    </button>
+    <button class="btn-action btn-despesa" @onclick='() => AbrirNovoModal("Despesa")'>
+        <i class="bi bi-dash-circle-fill"></i> Nova Despesa
+    </button>
+</div>
+
+<!-- Lista de Transações Recentes -->
+<div class="section-header">
+    <div class="section-title">
+        <i class="bi bi-clock-history"></i> Lançamentos do Mês
+    </div>
+    <div class="section-count">@Transacoes.Count registros</div>
+</div>
+
+@if (Transacoes.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+        <div style="font-weight: 700; color: #ffffff; margin-bottom: 6px;">Nenhum lançamento neste mês</div>
+        <div style="font-size: 13px; margin-bottom: 16px;">Clique nos botões acima para cadastrar receitas e despesas.</div>
+    </div>
+}
+else
+{
+    <div class="transaction-list">
+        @foreach (var item in Transacoes)
+        {
+            <div class="transaction-card" @onclick="() => EditarTransacao(item)">
+                <div class="trans-left">
+                    <div class="trans-icon @(item.Tipo == "Receita" ? "icon-green" : "icon-red")">
+                        <i class="bi @(item.Tipo == "Receita" ? "bi-arrow-down-left" : "bi-arrow-up-right")"></i>
+                    </div>
+                    <div class="trans-info">
+                        <div class="trans-desc">@item.Descricao</div>
+                        <div class="trans-meta">
+                            <span>@item.Data.ToString("dd/MM/yyyy")</span>
+                            <span class="badge-tag">@item.CategoriaNome</span>
+                            @if (item.Recorrente)
+                            {
+                                <span class="badge-recorrente"><i class="bi bi-repeat"></i> Fixa</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="trans-right">
+                    <div class="trans-val @(item.Tipo == "Receita" ? "value-green" : "value-red")">
+                        @(item.Tipo == "Receita" ? "+ " : "- ")@item.Valor.ToString("C2", PtBr)
+                    </div>
+                    @if (item.Tipo == "Despesa")
+                    {
+                        <div class="status-badge @(item.Paga ? "status-paga" : "status-pendente")"
+                             @onclick:stopPropagation="true"
+                             @onclick="() => ToggleStatusPaga(item)"
+                             title="Clique para alternar pago/pendente">
+                            <i class="bi @(item.Paga ? "bi-check-circle-fill" : "bi-hourglass-split")"></i>
+                            @(item.Paga ? "Paga" : "Pendente")
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<ModalTransacao @ref="modalTransacao" OnSaved="CarregarDadosAsync" />
+
+@code {
+    private static readonly System.Globalization.CultureInfo PtBr = new("pt-BR");
+
+    private ModalTransacao? modalTransacao;
+    private DateTime DataReferencia = DateTime.Today;
+    private List<TransacaoItem> Transacoes = [];
+
+    private decimal TotalReceitas = 0;
+    private decimal TotalDespesas = 0;
+    private decimal SaldoMes => TotalReceitas - TotalDespesas;
+    private decimal TotalPagas = 0;
+    private decimal TotalPendentes = 0;
+    private int CountReceitas = 0;
+    private int CountDespesas = 0;
+
+    private string NomeMesAno => DataReferencia.ToString("MMMM yyyy", PtBr);
+
+    protected override async Task OnInitializedAsync()
+    {
+        FinanceService.OnChange += StateHasChanged;
+        await CarregarDadosAsync();
+    }
+
+    private async Task CarregarDadosAsync()
+    {
+        var ano = DataReferencia.Year;
+        var mes = DataReferencia.Month;
+
+        var receitas = await FinanceService.GetReceitasMesAsync(ano, mes);
+        var despesas = await FinanceService.GetDespesasMesAsync(ano, mes);
+
+        TotalReceitas = receitas.Sum(r => r.Valor);
+        TotalDespesas = despesas.Sum(d => d.Valor);
+        TotalPagas = despesas.Where(d => d.Paga).Sum(d => d.Valor);
+        TotalPendentes = despesas.Where(d => !d.Paga).Sum(d => d.Valor);
+
+        CountReceitas = receitas.Count;
+        CountDespesas = despesas.Count;
+
+        Transacoes = await FinanceService.GetTransacoesMesAsync(ano, mes);
+        StateHasChanged();
+    }
+
+    private async Task MesAnterior()
+    {
+        DataReferencia = DataReferencia.AddMonths(-1);
+        await CarregarDadosAsync();
+    }
+
+    private async Task ProximoMes()
+    {
+        DataReferencia = DataReferencia.AddMonths(1);
+        await CarregarDadosAsync();
+    }
+
+    private async Task VoltarMesAtual()
+    {
+        DataReferencia = DateTime.Today;
+        await CarregarDadosAsync();
+    }
+
+    private async Task AbrirNovoModal(string tipo)
+    {
+        if (modalTransacao != null)
+        {
+            await modalTransacao.AbrirNovoAsync(tipo, DataReferencia);
+        }
+    }
+
+    private async Task EditarTransacao(TransacaoItem item)
+    {
+        if (modalTransacao != null)
+        {
+            await modalTransacao.AbrirEdicaoAsync(item);
+        }
+    }
+
+    private async Task ToggleStatusPaga(TransacaoItem item)
+    {
+        await JSRuntime.InvokeVoidAsync("manyControlJs.vibrate", 30);
+        await FinanceService.TogglePagaDespesaAsync(item.Id);
+        await CarregarDadosAsync();
+    }
+}
