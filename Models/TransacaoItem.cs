@@ -10,6 +10,7 @@ public class TransacaoItem
     public string CategoriaNome { get; set; } = "Sem categoria";
     public Guid? CategoriaId { get; set; }
     public bool Paga { get; set; }
+    public bool Recebida { get; set; } = true;
     public bool Recorrente { get; set; }
     public DateTime? Vencimento { get; set; }
     public DateTime? DataPagamento { get; set; }

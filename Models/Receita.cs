@@ -10,6 +10,10 @@ public class Receita
 
     public DateTime Data { get; set; } = DateTime.Today;
 
+    public bool Recebida { get; set; } = true;
+
+    public DateTime? DataRecebimento { get; set; }
+
     public Guid? CategoriaId { get; set; }
 
     public Categoria? Categoria { get; set; }

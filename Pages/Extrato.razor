@@ -92,11 +92,11 @@
     <button class="@(FiltroTipo == "Despesa" && FiltroStatus == "Todos" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Despesa", "Todos")'>
         Despesas
     </button>
-    <button class="@(FiltroStatus == "Paga" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Despesa", "Paga")'>
-        Pagas
+    <button class="@(FiltroStatus == "Paga" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Todos", "Paga")'>
+        Pagas / Recebidas
     </button>
-    <button class="@(FiltroStatus == "Pendente" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Despesa", "Pendente")'>
-        Pendentes
+    <button class="@(FiltroStatus == "Pendente" ? "btn-native-blue" : "btn-native-gray")" style="padding: 6px 12px; font-size: 12px;" @onclick='() => SetFiltro("Todos", "Pendente")'>
+        Pendentes / A Receber
     </button>
 </div>
 
@@ -125,8 +125,15 @@ else
                 @if (item.Tipo == "Despesa")
                 {
                     <span class="badge-status-pill @(item.Paga ? "badge-paga" : "badge-pendente")"
-                          @onclick="() => AlternarStatusDespesa(item)">
+                          @onclick="() => AlternarStatusItem(item)">
                         @(item.Paga ? "✓ PAGA" : "⏳ PENDENTE")
+                    </span>
+                }
+                else
+                {
+                    <span class="badge-status-pill @(item.Recebida ? "badge-paga" : "badge-pendente")"
+                          @onclick="() => AlternarStatusItem(item)">
+                        @(item.Recebida ? "✓ RECEBIDA" : "⏳ A RECEBER")
                     </span>
                 }
                 <span class="trans-title">@item.Descricao</span>
@@ -189,6 +196,16 @@ else
                     </div>
                 </div>
             }
+            else
+            {
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; margin-top: 8px;">
+                    <span style="font-size: 14px; color: #ffffff;">Receita já recebida</span>
+                    <div class="toggle-switch" @onclick="() => EditRecebida = !EditRecebida">
+                        <input type="checkbox" checked="@EditRecebida" />
+                        <span class="slider"></span>
+                    </div>
+                </div>
+            }
 
             <div style="display: flex; gap: 12px; margin-top: 12px;">
                 <button class="btn-native-blue" style="flex: 1;" @onclick="SalvarEdicaoModal">Atualizar</button>
@@ -241,6 +258,7 @@ else
     private DateTime? EditVencimento;
     private bool EditRecorrente;
     private bool EditPaga;
+    private bool EditRecebida = true;
 
     private string? ExplicacaoTitulo;
     private string? ExplicacaoTexto;
@@ -254,10 +272,16 @@ else
             if (FiltroTipo != "Todos" && !string.Equals(t.Tipo, FiltroTipo, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (FiltroStatus == "Paga" && (t.Tipo != "Despesa" || !t.Paga))
-                return false;
-            if (FiltroStatus == "Pendente" && (t.Tipo != "Despesa" || t.Paga))
-                return false;
+            if (FiltroStatus == "Paga")
+            {
+                if (t.Tipo == "Despesa" && !t.Paga) return false;
+                if (t.Tipo == "Receita" && !t.Recebida) return false;
+            }
+            if (FiltroStatus == "Pendente")
+            {
+                if (t.Tipo == "Despesa" && t.Paga) return false;
+                if (t.Tipo == "Receita" && t.Recebida) return false;
+            }
 
             if (!string.IsNullOrWhiteSpace(TermoBusca))
             {
@@ -315,10 +339,17 @@ else
         FiltroStatus = status;
     }
 
-    private async Task AlternarStatusDespesa(TransacaoItem item)
+    private async Task AlternarStatusItem(TransacaoItem item)
     {
         await JSRuntime.InvokeVoidAsync("manyControlJs.vibrate", 30);
-        await FinanceService.TogglePagaDespesaAsync(item.Id);
+        if (item.Tipo == "Despesa")
+        {
+            await FinanceService.TogglePagaDespesaAsync(item.Id);
+        }
+        else
+        {
+            await FinanceService.ToggleRecebidaReceitaAsync(item.Id);
+        }
         await CarregarDadosAsync();
     }
 
@@ -333,6 +364,7 @@ else
         EditVencimento = item.Vencimento;
         EditRecorrente = item.Recorrente;
         EditPaga = item.Paga;
+        EditRecebida = item.Recebida;
         IsEditModalVisible = true;
     }
 
@@ -361,7 +393,8 @@ else
                 Id = EditId.Value,
                 Descricao = EditDescricao.Trim(),
                 Valor = EditValor,
-                Data = EditData
+                Data = EditData,
+                Recebida = EditRecebida
             });
         }
 

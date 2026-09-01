@@ -1,4 +1,4 @@
-@page "/"
+﻿@page "/"
 @using ManyControl_Web.Models
 @using ManyControl_Web.Services
 @using ManyControl_Web.Components
@@ -108,6 +108,19 @@
     <div class="form-field">
         <input type="date" class="native-input" @bind="NovaReceitaData" />
     </div>
+
+    <!-- Switch Receita já recebida -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 6px 0;">
+        <div>
+            <div style="font-size: 14px; color: #ffffff;">Receita já recebida</div>
+            <div style="font-size: 12px; color: var(--text-gray-500);">Marque se este valor já foi creditado na conta</div>
+        </div>
+        <div class="toggle-switch" @onclick="() => NovaReceitaRecebida = !NovaReceitaRecebida">
+            <input type="checkbox" checked="@NovaReceitaRecebida" />
+            <span class="slider"></span>
+        </div>
+    </div>
+
     <div style="display: flex; gap: 12px; margin-top: 4px;">
         <button class="btn-native-blue" @onclick="SalvarNovaReceita">Salvar receita</button>
         <button class="btn-native-gray" @onclick="LimparNovaReceita">Cancelar</button>
@@ -218,6 +231,11 @@
         {
             <div class="trans-item-card">
                 <div class="trans-item-top">
+                    <!-- Badge Interativo de Status Recebida / A Receber -->
+                    <span class="badge-status-pill @(rec.Recebida ? "badge-paga" : "badge-pendente")"
+                          @onclick="() => AlternarStatusReceita(rec)">
+                        @(rec.Recebida ? "✓ RECEBIDA" : "⏳ A RECEBER")
+                    </span>
                     <span class="trans-title">@rec.Descricao</span>
                     <span class="trans-val-green">+ @rec.Valor.ToString("C2", PtBr)</span>
                 </div>
@@ -233,7 +251,7 @@
     }
 </div>
 
-<!-- Modal de Edição (Idêntico ao nativo) -->
+<!-- Modal de Edição -->
 @if (IsEditModalVisible)
 {
     <div class="modal-overlay" @onclick="FecharModalEdicao">
@@ -267,6 +285,16 @@
                     <span style="font-size: 14px; color: #ffffff;">Despesa já paga</span>
                     <div class="toggle-switch" @onclick="() => EditPaga = !EditPaga">
                         <input type="checkbox" checked="@EditPaga" />
+                        <span class="slider"></span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; margin-top: 8px;">
+                    <span style="font-size: 14px; color: #ffffff;">Receita já recebida</span>
+                    <div class="toggle-switch" @onclick="() => EditRecebida = !EditRecebida">
+                        <input type="checkbox" checked="@EditRecebida" />
                         <span class="slider"></span>
                     </div>
                 </div>
@@ -315,6 +343,7 @@
     private string NovaReceitaDescricao = string.Empty;
     private decimal? NovaReceitaValor;
     private DateTime NovaReceitaData = DateTime.Today;
+    private bool NovaReceitaRecebida = true;
 
     // Form Nova Despesa
     private string NovaDespesaDescricao = string.Empty;
@@ -335,6 +364,7 @@
     private DateTime? EditVencimento;
     private bool EditRecorrente;
     private bool EditPaga;
+    private bool EditRecebida = true;
 
     private string? ExplicacaoTitulo;
     private string? ExplicacaoTexto;
@@ -393,7 +423,9 @@
         {
             Descricao = NovaReceitaDescricao.Trim(),
             Valor = NovaReceitaValor.Value,
-            Data = NovaReceitaData
+            Data = NovaReceitaData,
+            Recebida = NovaReceitaRecebida,
+            DataRecebimento = NovaReceitaRecebida ? NovaReceitaData : null
         });
 
         LimparNovaReceita();
@@ -405,6 +437,7 @@
         NovaReceitaDescricao = string.Empty;
         NovaReceitaValor = null;
         NovaReceitaData = DateTime.Today;
+        NovaReceitaRecebida = true;
     }
 
     private async Task SalvarNovaDespesa()
@@ -443,6 +476,13 @@
         await CarregarDadosAsync();
     }
 
+    private async Task AlternarStatusReceita(Receita rec)
+    {
+        await JSRuntime.InvokeVoidAsync("manyControlJs.vibrate", 30);
+        await FinanceService.ToggleRecebidaReceitaAsync(rec.Id);
+        await CarregarDadosAsync();
+    }
+
     private void AbrirModalEdicaoReceita(Receita rec)
     {
         IsEditingDespesa = false;
@@ -451,6 +491,7 @@
         EditDescricao = rec.Descricao;
         EditValor = rec.Valor;
         EditData = rec.Data;
+        EditRecebida = rec.Recebida;
         IsEditModalVisible = true;
     }
 
@@ -493,7 +534,8 @@
                 Id = EditId.Value,
                 Descricao = EditDescricao.Trim(),
                 Valor = EditValor,
-                Data = EditData
+                Data = EditData,
+                Recebida = EditRecebida
             });
         }
 

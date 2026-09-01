@@ -1,4 +1,4 @@
-﻿using ManyControl_Web.Models;
+using ManyControl_Web.Models;
 
 namespace ManyControl_Web.Services;
 
@@ -181,8 +181,24 @@ public class FinanceWebService
             item.Descricao = receita.Descricao;
             item.Valor = receita.Valor;
             item.Data = receita.Data;
+            item.Recebida = receita.Recebida;
+            item.DataRecebimento = receita.Recebida ? (receita.DataRecebimento ?? receita.Data) : null;
             item.CategoriaId = receita.CategoriaId;
             item.Categoria = receita.CategoriaId.HasValue ? _categorias.FirstOrDefault(c => c.Id == receita.CategoriaId.Value) : null;
+            item.UpdatedAt = DateTime.UtcNow;
+            await SalvarReceitasAsync();
+            NotifyStateChanged();
+        }
+    }
+
+    public async Task ToggleRecebidaReceitaAsync(Guid id)
+    {
+        await InicializarAsync();
+        var item = _receitas.FirstOrDefault(r => r.Id == id);
+        if (item != null)
+        {
+            item.Recebida = !item.Recebida;
+            item.DataRecebimento = item.Recebida ? (item.DataRecebimento ?? DateTime.Today) : null;
             item.UpdatedAt = DateTime.UtcNow;
             await SalvarReceitasAsync();
             NotifyStateChanged();
@@ -302,9 +318,11 @@ public class FinanceWebService
                 Valor = r.Valor,
                 Data = r.Data,
                 Tipo = "Receita",
+                Recebida = r.Recebida,
                 CategoriaNome = _categorias.FirstOrDefault(c => c.Id == r.CategoriaId)?.Nome ?? "Receita Geral",
                 CategoriaId = r.CategoriaId,
-                Paga = true
+                Paga = true,
+                DataPagamento = r.DataRecebimento
             });
 
         var despesas = _despesas
