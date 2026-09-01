@@ -1,9 +1,10 @@
-﻿@page "/"
+@page "/"
 @using ManyControl_Web.Models
 @using ManyControl_Web.Services
 @using ManyControl_Web.Components
 @inject FinanceWebService FinanceService
 @inject BackupService BackupService
+@inject GoogleDriveWebService GoogleDriveService
 @inject IJSRuntime JSRuntime
 
 <PageTitle>ManyControl - Início</PageTitle>
@@ -528,8 +529,18 @@
 
     private async Task SincronizarAgora()
     {
-        UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
-        await BackupService.ExportarBackupAsync();
+        if (await GoogleDriveService.IsConnectedAsync())
+        {
+            var res = await GoogleDriveService.SincronizarAsync();
+            UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
+            await CarregarDadosAsync();
+            await JSRuntime.InvokeVoidAsync("alert", res == "Tudo sincronizado" ? "Sincronização com o Google Drive realizada com sucesso!" : res);
+        }
+        else
+        {
+            UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
+            await BackupService.ExportarBackupAsync();
+        }
     }
 
     private async Task TriggerImportBackup()

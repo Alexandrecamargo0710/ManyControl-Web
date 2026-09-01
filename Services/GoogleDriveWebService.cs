@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using ManyControl_Web.Models;
 using Microsoft.JSInterop;
 
@@ -9,7 +9,7 @@ public class GoogleDriveWebService
     private const string GoogleTokenKey = "manycontrol_google_token";
     private const string GoogleEmailKey = "manycontrol_google_email";
     private const string LastSyncTimeKey = "manycontrol_last_sync_time";
-    public const string DefaultClientId = "467782905209-ber1veul4dtpokhbem6hf18raptoq4pm.apps.googleusercontent.com";
+    public const string DefaultClientId = "467782905209-n8n3i4thm5ga7bphtbqqk7jqq1karjbl.apps.googleusercontent.com";
 
     private readonly IJSRuntime _jsRuntime;
     private readonly FinanceWebService _financeService;
