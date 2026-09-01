@@ -31,9 +31,3 @@ Aplicação Web / PWA de **Controle Financeiro Pessoal**, construída com **.NET
 3. Role para baixo e selecione **"Adicionar à Tela de Início"**.
 4. Toque em **Adicionar**.
 5. **Pronto!** O ícone do ManyControl aparecerá na tela inicial do seu iPhone e abrirá como um app nativo.
-
----
-   git push -u origin main
-   ```
-3. No GitHub, acesse: **Settings** > **Pages** > em **Build and deployment / Source**, selecione **Deploy from a branch** e escolha o branch **`gh-pages`** (pasta `/ (root)`).
-4. O seu app estará online e acessível gratuitamente em `https://SEU_USUARIO.github.io/ManyControl-Web/`!
