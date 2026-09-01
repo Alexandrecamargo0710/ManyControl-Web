@@ -3,18 +3,86 @@
 @using ManyControl_Web.Services
 @inject FinanceWebService FinanceService
 @inject BackupService BackupService
+@inject GoogleDriveWebService GoogleDriveService
 @inject IJSRuntime JSRuntime
+@implements IDisposable
 
 <PageTitle>ManyControl - Sincronização</PageTitle>
 
-<!-- Card 1: Backup Local (Arquivo Físico) -->
+<!-- Card 1: Google Drive (Modo NÃO CONECTADO) -->
+@if (!IsConnected)
+{
+    <div class="native-card">
+        <div style="font-size: 20px; font-weight: 700; color: #ffffff;">Google Drive</div>
+        <div style="font-size: 13px; color: var(--text-gray-400); line-height: 1.5;">
+            Conecte sua conta do Google para sincronizar automaticamente seus dados na nuvem com backup duplo (pasta do Drive e armazenamento seguro).
+        </div>
+
+        <!-- Botão Oficial do Google com Logo SVG -->
+        <div style="margin-top: 8px;">
+            <button style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 26px; padding: 12px 20px; display: inline-flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.15s;"
+                    @onclick="ConectarGoogle">
+                <img src="google_logo.svg" alt="Google" style="width: 22px; height: 22px;" />
+                <span style="color: #1f2937; font-size: 15px; font-weight: 700;">Fazer login com o Google</span>
+            </button>
+        </div>
+    </div>
+}
+
+<!-- Card 2: Google Drive (Modo CONECTADO) -->
+@if (IsConnected)
+{
+    <div class="native-card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <img src="google_logo.svg" alt="Google" style="width: 20px; height: 20px;" />
+                <span style="font-size: 18px; font-weight: 700; color: #34d399;">Google Drive Conectado</span>
+            </div>
+            <span style="background-color: #064e3b; color: #a7f3d0; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px;">
+                ● Ativo
+            </span>
+        </div>
+
+        <div style="background-color: #1f2937; border: 1px solid var(--border-card); border-radius: 12px; padding: 12px 16px; margin: 6px 0;">
+            <div style="font-size: 12px; color: var(--text-gray-400);">Conta Google vinculada:</div>
+            <div style="font-size: 16px; font-weight: 700; color: #ffffff;">@ConnectedEmail</div>
+            <div style="font-size: 12px; color: #6ee7b7; margin-top: 4px;">Pasta de destino: 'ManyControl' na raiz do seu Drive.</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0;">
+            <div>
+                <div style="font-size: 12px; color: var(--text-gray-400);">Última Sincronização</div>
+                <div style="font-size: 14px; font-weight: 700; color: #ffffff;">@LastSyncText</div>
+            </div>
+            <div>
+                <div style="font-size: 12px; color: var(--text-gray-400);">Última Operação</div>
+                <div style="font-size: 14px; color: #e5e7eb;">Nuvem & Local</div>
+            </div>
+            <div style="grid-column: span 2;">
+                <div style="font-size: 12px; color: var(--text-gray-400);">Status do Robô</div>
+                <div style="font-size: 13px; font-weight: 700; color: #a7f3d0;">@SyncStatusText</div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 8px;">
+            <button class="btn-native-blue" style="height: 46px; font-size: 15px;" @onclick="SincronizarGoogleAgora">
+                🔄 Sincronizar Agora
+            </button>
+            <button class="btn-native-gray" style="height: 46px; font-size: 14px; color: #f87171;" @onclick="DesconectarGoogle">
+                Desconectar Conta
+            </button>
+        </div>
+    </div>
+}
+
+<!-- Card 3: Backups Manuais (Arquivos Locais em JSON) -->
 <div class="native-card">
     <div style="font-size: 18px; font-weight: 700; color: #ffffff;">Backup Local (Arquivo Físico)</div>
     <div style="font-size: 13px; color: var(--text-gray-400); line-height: 1.5;">
-        Exporte uma cópia de segurança física no seu dispositivo ou restaure um backup antigo a qualquer momento sem precisar de internet.
+        Exporte uma cópia de segurança física no seu computador ou restaure um backup antigo a qualquer momento sem precisar de internet.
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+    <div style="display: flex; gap: 12px; margin-top: 6px;">
         <button class="btn-native-gray" @onclick="ExportarBackup">Exportar Backup Local</button>
         <button class="btn-native-gray" @onclick="TriggerImportFile">Restaurar de Arquivo</button>
     </div>
@@ -27,90 +95,95 @@
             ✓ @MensagemBackup
         </div>
     }
+
+    <div style="font-size: 11px; color: var(--text-gray-500); margin-top: 8px;">
+        Armazenamento local: Navegador / PWA Cache
+    </div>
 </div>
 
-<!-- Card 2: Gerenciador de Categorias -->
+<!-- Card 4: Atualizações do Aplicativo -->
 <div class="native-card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="font-size: 18px; font-weight: 700; color: #ffffff;">Gerenciar Categorias</div>
-        <span style="font-size: 12px; color: var(--text-gray-400);">@Categorias.Count cadastradas</span>
-    </div>
-
-    <div style="display: flex; gap: 8px; margin-top: 6px;">
-        <input type="text" class="native-input" style="flex: 2;" placeholder="Nome da categoria..." @bind="NovaCategoriaNome" />
-        <select class="native-input" style="flex: 1;" @bind="NovaCategoriaTipo">
-            <option value="Despesa">Despesa</option>
-            <option value="Receita">Receita</option>
-        </select>
-        <button class="btn-native-blue" style="padding: 0 16px; font-size: 16px;" @onclick="AdicionarCategoriaAsync">+</button>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 240px; overflow-y: auto;">
-        @foreach (var cat in Categorias)
-        {
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-card-secondary); border-radius: 8px; border: 1px solid var(--border-card);">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 14px; font-weight: 600; color: #ffffff;">@cat.Nome</span>
-                    <span style="font-size: 10px; color: var(--text-gray-500); text-transform: uppercase;">(@cat.Tipo)</span>
-                </div>
-                <button style="background: transparent; border: none; color: var(--color-red-btn); cursor: pointer; font-size: 13px;" @onclick="() => ExcluirCategoriaAsync(cat.Id)">
-                    Excluir
-                </button>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <div style="font-size: 18px; font-weight: 700; color: #ffffff;">Atualizações do ManyControl</div>
+            <div style="font-size: 13px; color: var(--text-gray-400);">
+                Versão Web PWA com atualizações automáticas instantâneas a cada lançamento.
             </div>
-        }
+        </div>
+        <span style="background-color: #1e293b; color: #38bdf8; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 12px; white-space: nowrap;">
+            v1.0.14
+        </span>
     </div>
-</div>
 
-<!-- Card 3: Sobre e Dica PWA -->
-<div class="native-card">
-    <div style="font-size: 18px; font-weight: 700; color: #ffffff;">Sobre o ManyControl</div>
-    <div style="font-size: 13px; color: var(--text-gray-400); line-height: 1.6;">
-        <p>• <strong>Privacidade:</strong> Seus dados ficam salvos de forma privada no seu dispositivo.</p>
-        <p>• <strong>iPhone / Safari:</strong> Toque no ícone de <strong>Compartilhar</strong> e escolha <strong>"Adicionar à Tela de Início"</strong> para usar em tela cheia.</p>
+    <div style="font-size: 13px; color: #cbd5e1; margin-top: 6px;">
+        @UpdateStatusText
     </div>
-</div>
 
-<!-- Card 4: Zona de Perigo -->
-<div class="native-card" style="border-color: #991b1b;">
-    <div style="font-size: 16px; font-weight: 700; color: #f87171;">Zona de Perigo</div>
-    <div style="font-size: 12px; color: var(--text-gray-400);">
-        Apaga todos os dados e retorna o app ao estado inicial de fábrica.
+    <div style="margin-top: 8px;">
+        <button class="btn-native-blue" style="background-color: #0284c7;" @onclick="ChecarAtualizacao">
+            Verificar Atualizações
+        </button>
     </div>
-    <button class="btn-native-red" style="margin-top: 6px;" @onclick="ConfirmarLimpezaDadosAsync">
-        Resetar Todos os Dados
-    </button>
 </div>
 
 @code {
-    private List<Categoria> Categorias = [];
-    private string NovaCategoriaNome = string.Empty;
-    private string NovaCategoriaTipo = "Despesa";
+    private bool IsConnected = false;
+    private string ConnectedEmail = "Conectado";
+    private string LastSyncText = "Hoje";
+    private string SyncStatusText = "● Tudo sincronizado";
     private string MensagemBackup = string.Empty;
+    private string UpdateStatusText = "O aplicativo já está na versão mais recente (v1.0.14)!";
+
+    private DotNetObjectReference<GoogleDriveWebService>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
-        await CarregarCategoriasAsync();
+        _dotNetRef = DotNetObjectReference.Create(GoogleDriveService);
+        GoogleDriveService.OnStatusChanged += AtualizarEstado;
+        await CarregarEstadoAsync();
     }
 
-    private async Task CarregarCategoriasAsync()
+    private async Task CarregarEstadoAsync()
     {
-        Categorias = await FinanceService.GetCategoriasAsync();
+        IsConnected = await GoogleDriveService.IsConnectedAsync();
+        if (IsConnected)
+        {
+            ConnectedEmail = await GoogleDriveService.GetConnectedEmailAsync() ?? "Conta Conectada";
+        }
+        LastSyncText = await GoogleDriveService.GetLastSyncTextAsync();
         StateHasChanged();
     }
 
-    private async Task AdicionarCategoriaAsync()
+    private void AtualizarEstado()
     {
-        if (string.IsNullOrWhiteSpace(NovaCategoriaNome)) return;
-
-        await FinanceService.AddCategoriaAsync(NovaCategoriaNome, NovaCategoriaTipo);
-        NovaCategoriaNome = string.Empty;
-        await CarregarCategoriasAsync();
+        _ = InvokeAsync(async () =>
+        {
+            await CarregarEstadoAsync();
+        });
     }
 
-    private async Task ExcluirCategoriaAsync(Guid id)
+    private async Task ConectarGoogle()
     {
-        await FinanceService.DeleteCategoriaAsync(id);
-        await CarregarCategoriasAsync();
+        if (_dotNetRef != null)
+        {
+            await GoogleDriveService.ConectarAsync(_dotNetRef);
+        }
+    }
+
+    private async Task DesconectarGoogle()
+    {
+        await GoogleDriveService.DesconectarAsync();
+        await CarregarEstadoAsync();
+    }
+
+    private async Task SincronizarGoogleAgora()
+    {
+        SyncStatusText = "Sincronizando...";
+        StateHasChanged();
+        var res = await GoogleDriveService.SincronizarAsync();
+        SyncStatusText = res == "Tudo sincronizado" ? "● Tudo sincronizado" : res;
+        LastSyncText = await GoogleDriveService.GetLastSyncTextAsync();
+        StateHasChanged();
     }
 
     private async Task ExportarBackup()
@@ -134,31 +207,26 @@
             using var reader = new System.IO.StreamReader(file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
             var json = await reader.ReadToEndAsync();
 
-            var sucesso = await BackupService.ImportarBackupJsonAsync(json, sobrescrever: false);
+            var sucesso = await BackupService.ImportarBackupJsonAsync(json, false);
             if (sucesso)
             {
-                MensagemBackup = "Dados importados e sincronizados com sucesso!";
-                await CarregarCategoriasAsync();
-            }
-            else
-            {
-                MensagemBackup = "Formato de arquivo inválido.";
+                MensagemBackup = "Dados restaurados com sucesso!";
             }
         }
         catch (Exception ex)
         {
-            MensagemBackup = $"Erro ao importar: {ex.Message}";
+            MensagemBackup = $"Erro ao restaurar: {ex.Message}";
         }
     }
 
-    private async Task ConfirmarLimpezaDadosAsync()
+    private void ChecarAtualizacao()
     {
-        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Tem certeza que deseja apagar todos os dados financeiros deste dispositivo? Esta ação não pode ser desfeita.");
-        if (confirm)
-        {
-            await FinanceService.LimparTodosDadosAsync();
-            await CarregarCategoriasAsync();
-            MensagemBackup = "Todos os dados foram resetados com sucesso.";
-        }
+        UpdateStatusText = "Você já está utilizando a versão mais recente (v1.0.14)!";
+    }
+
+    public void Dispose()
+    {
+        GoogleDriveService.OnStatusChanged -= AtualizarEstado;
+        _dotNetRef?.Dispose();
     }
 }

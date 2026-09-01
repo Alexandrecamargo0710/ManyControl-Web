@@ -13,5 +13,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<StorageService>();
 builder.Services.AddScoped<FinanceWebService>();
 builder.Services.AddScoped<BackupService>();
+builder.Services.AddScoped<GoogleDriveWebService>();
 
 await builder.Build().RunAsync();
