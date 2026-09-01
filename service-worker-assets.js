@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "g0SAGunT",
+  "version": "NgchC84i",
   "assets": [
     {
       "hash": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
@@ -10,8 +10,8 @@ self.assetsManifest = {
       "url": "404.html"
     },
     {
-      "hash": "sha256-5wSjQPdGRt8G0El+4a2ILArGh9cxcvTteKHzlzUnptI=",
-      "url": "_framework/ManyControl-Web.j1r4bi3o7r.wasm"
+      "hash": "sha256-8FmLBqvu1rACLrS20iSJnQGeDmUOKkNBDUTj6IaHn4U=",
+      "url": "_framework/ManyControl-Web.oidy57g151.wasm"
     },
     {
       "hash": "sha256-vI9KGAwO4PKnXTe48gdTMozUGHi7FMiPdbiC5KUno/c=",
@@ -22,8 +22,8 @@ self.assetsManifest = {
       "url": "_framework/Microsoft.AspNetCore.Components.WebAssembly.zwzfd78cad.wasm"
     },
     {
-      "hash": "sha256-67q/EkdwW9mWXTt3KKCE0MpcYDiuaOEeY8WlGHVinIM=",
-      "url": "_framework/Microsoft.AspNetCore.Components.hhq0vo2zdi.wasm"
+      "hash": "sha256-yt/tG1Tiye+0GasR/P/3Ey3MU/NAnEy+w2eyKkhx1vc=",
+      "url": "_framework/Microsoft.AspNetCore.Components.ea4mdpv59q.wasm"
     },
     {
       "hash": "sha256-LRrW/S2jAmMqf71EuwOxgMbVdrDu7QppjlK8PjiYgAU=",
@@ -182,8 +182,8 @@ self.assetsManifest = {
       "url": "_framework/blazor.webassembly.w3qd1tpl0e.js"
     },
     {
-      "hash": "sha256-OXT9fFgazf/Pry6WqNORimbXePzVf+/82Dw3YON7r74=",
-      "url": "_framework/dotnet.bjlrajbnfm.js"
+      "hash": "sha256-bPjEnZIsgfHO22saR3LpLd1vp1NMqmExKyQzHHYsZQc=",
+      "url": "_framework/dotnet.kkvf2alf0s.js"
     },
     {
       "hash": "sha256-hYigRhIZKHyCXxXWqL/yR3ZWzZhV2oSi+2N3/UPeoxk=",
@@ -214,7 +214,7 @@ self.assetsManifest = {
       "url": "apple-touch-icon.png"
     },
     {
-      "hash": "sha256-/OLndu8luFtwKcs0Hn/xs33eHUC8tr+RIgK+isQh7VI=",
+      "hash": "sha256-BH2GbrFy5MB0/HqsEpkW9g1JqpgzdawZEatPqT1uhNs=",
       "url": "css/app.css"
     },
     {
@@ -230,7 +230,7 @@ self.assetsManifest = {
       "url": "icon-512.png"
     },
     {
-      "hash": "sha256-TGjiUZ8k/5qe/UVgHyZHRFAyumzpS0jj1QOtFKPHUOU=",
+      "hash": "sha256-IYd7NWARs7jQLh7A2N36BFsqVgDy64mFiJb3FAfDAdU=",
       "url": "index.html"
     },
     {
