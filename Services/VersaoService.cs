@@ -21,7 +21,6 @@ public class VersaoService
     {
         try
         {
-            // Busca o changelog.json com timestamp para nunca ficar preso em cache do navegador
             var url = $"changelog.json?t={DateTime.UtcNow.Ticks}";
             var dados = await _http.GetFromJsonAsync<List<VersaoInfo>>(url);
             if (dados != null && dados.Count > 0)
@@ -55,7 +54,7 @@ public class VersaoService
         {
             Numero = "v1.0.17",
             DataLancamento = "02/09/2026",
-            Titulo = "Tema Claro (Light Mode) & Alternador Dinâmico",
+            Titulo = "Tema Claro (Light Mode)",
             IsAtual = true
         };
     }
@@ -68,30 +67,23 @@ public class VersaoService
             {
                 Numero = "v1.0.17",
                 DataLancamento = "02/09/2026",
-                Titulo = "Tema Claro (Light Mode) & Alternador Dinâmico",
+                Titulo = "Tema Claro (Light Mode)",
                 IsAtual = true,
                 Destaques =
                 [
                     new VersaoItemDestaque
                     {
                         Tipo = "Novidade",
-                        Titulo = "Tema Claro (Light Mode)",
-                        Descricao = "Implementação completa do tema claro elegante com alto contraste para todas as telas, cards de métricas, extratos, formulários e modais.",
+                        Titulo = "Tema Claro (Modo Dia)",
+                        Descricao = "Novo visual claro com alto contraste e leitura suave, ideal para usar durante o dia ou em locais iluminados.",
                         Icone = "bi-sun-fill"
                     },
                     new VersaoItemDestaque
                     {
                         Tipo = "Melhoria",
-                        Titulo = "Alternador Rápido de Temas",
-                        Descricao = "Botão de alternância instantânea no cabeçalho sincronizado em tempo real com a tela de configurações e persistência automática no seu dispositivo.",
+                        Titulo = "Alternador Rápido de Tema",
+                        Descricao = "Troque entre o modo claro e escuro a qualquer momento pelo botão no topo da tela ou na aba de Sincronização.",
                         Icone = "bi-moon-stars-fill"
-                    },
-                    new VersaoItemDestaque
-                    {
-                        Tipo = "Ajuste",
-                        Titulo = "Alinhamento e Centralização dos Botões",
-                        Descricao = "Botões com altura mínima de 44px e texto 100% centralizado na horizontal e vertical em smartphones.",
-                        Icone = "bi-layout-text-window"
                     }
                 ]
             },
@@ -99,33 +91,23 @@ public class VersaoService
             {
                 Numero = "v1.0.16",
                 DataLancamento = "02/09/2026",
-                Titulo = "Alinhamento de Botões, Remoção de Emojis & PWA Instantâneo",
+                Titulo = "Melhorias de Visual e Botões",
                 IsAtual = false,
                 Destaques =
                 [
                     new VersaoItemDestaque
                     {
                         Tipo = "Ajuste",
-                        Titulo = "Alinhamento e Centralização dos Botões",
-                        Descricao = "Correção do alinhamento do botão 'Sincronizar Agora' e botões em tela de celulares.",
-                        Icone = "bi-layout-text-window"
-                    }
-                ]
-            },
-            new VersaoInfo
-            {
-                Numero = "v1.0.15",
-                DataLancamento = "02/09/2026",
-                Titulo = "Ajuste nos Campos de Data & Dark Mode",
-                IsAtual = false,
-                Destaques =
-                [
+                        Titulo = "Alinhamento dos Botões no Celular",
+                        Descricao = "Ajuste no formato e espaçamento dos botões para facilitar o toque no celular.",
+                        Icone = "bi-phone"
+                    },
                     new VersaoItemDestaque
                     {
-                        Tipo = "Ajuste",
-                        Titulo = "Campos de Data sem Transbordo",
-                        Descricao = "Ajuste no dimensionamento dos seletores de data e suporte a Dark Mode nativo.",
-                        Icone = "bi-calendar-date-fill"
+                        Tipo = "Melhoria",
+                        Titulo = "Ícones Modernos",
+                        Descricao = "Substituição de emojis antigos por novos ícones padronizados.",
+                        Icone = "bi-check2-circle"
                     }
                 ]
             }

@@ -2,51 +2,45 @@
   {
     "numero": "v1.0.17",
     "dataLancamento": "02/09/2026",
-    "titulo": "Tema Claro (Light Mode) & Alternador Dinâmico",
+    "titulo": "Tema Claro (Light Mode)",
     "isAtual": true,
     "destaques": [
       {
         "tipo": "Novidade",
-        "titulo": "Tema Claro (Light Mode)",
-        "descricao": "Implementação completa do tema claro elegante com alto contraste para todas as telas, cards de métricas, extratos, formulários e modais.",
+        "titulo": "Tema Claro (Modo Dia)",
+        "descricao": "Novo visual claro com alto contraste e leitura suave, ideal para usar durante o dia ou em locais iluminados.",
         "icone": "bi-sun-fill"
       },
       {
         "tipo": "Melhoria",
-        "titulo": "Alternador Rápido de Temas",
-        "descricao": "Botão de alternância instantânea no cabeçalho sincronizado em tempo real com a tela de configurações e persistência automática no seu dispositivo.",
+        "titulo": "Alternador Rápido de Tema",
+        "descricao": "Troque entre o modo claro e escuro a qualquer momento pelo botão no topo da tela ou na aba de Sincronização.",
         "icone": "bi-moon-stars-fill"
-      },
-      {
-        "tipo": "Ajuste",
-        "titulo": "Alinhamento e Centralização dos Botões",
-        "descricao": "Botões com altura mínima de 44px e texto 100% centralizado na horizontal e vertical em smartphones.",
-        "icone": "bi-layout-text-window"
-      },
-      {
-        "tipo": "Melhoria",
-        "titulo": "Remoção de Emojis dos Botões",
-        "descricao": "Ícones vetoriais padronizados do Bootstrap Icons em todas as telas e seletores.",
-        "icone": "bi-slash-circle"
       }
     ]
   },
   {
     "numero": "v1.0.16",
     "dataLancamento": "02/09/2026",
-    "titulo": "Alinhamento de Botões, Remoção de Emojis & PWA Instantâneo",
+    "titulo": "Melhorias de Visual e Botões",
     "isAtual": false,
     "destaques": [
       {
         "tipo": "Ajuste",
-        "titulo": "Alinhamento e Centralização dos Botões",
-        "descricao": "Correção do alinhamento do botão 'Sincronizar Agora' e botões em tela de celulares.",
-        "icone": "bi-layout-text-window"
+        "titulo": "Alinhamento dos Botões no Celular",
+        "descricao": "Ajuste no formato e espaçamento dos botões para facilitar o toque no celular.",
+        "icone": "bi-phone"
       },
       {
-        "tipo": "Novidade",
-        "titulo": "Atualização Imediata do PWA",
-        "descricao": "Implementação de ativação instantânea no Service Worker (skipWaiting e clients.claim).",
+        "tipo": "Melhoria",
+        "titulo": "Ícones Modernos",
+        "descricao": "Substituição de emojis antigos por novos ícones padronizados.",
+        "icone": "bi-check2-circle"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Atualizações Instantâneas",
+        "descricao": "O aplicativo agora atualiza automaticamente a cada nova versão lançada.",
         "icone": "bi-lightning-charge-fill"
       }
     ]
@@ -54,27 +48,27 @@
   {
     "numero": "v1.0.15",
     "dataLancamento": "02/09/2026",
-    "titulo": "Ajuste nos Campos de Data & Dark Mode",
+    "titulo": "Ajuste nos Seletores de Data",
     "isAtual": false,
     "destaques": [
       {
         "tipo": "Ajuste",
         "titulo": "Campos de Data sem Transbordo",
-        "descricao": "Ajuste no dimensionamento dos seletores de data e suporte a Dark Mode nativo.",
-        "icone": "bi-calendar-date-fill"
+        "descricao": "Ajuste no tamanho dos campos de data para não passar do limite da tela em celulares.",
+        "icone": "bi-calendar-date"
       }
     ]
   },
   {
     "numero": "v1.0.14",
     "dataLancamento": "28/08/2026",
-    "titulo": "Sincronização Google Drive & Balanço Visual",
+    "titulo": "Google Drive e Nuvem",
     "isAtual": false,
     "destaques": [
       {
         "tipo": "Novidade",
         "titulo": "Sincronização com Google Drive",
-        "descricao": "Backup automático e sincronização em nuvem diretamente na sua pasta do Google Drive.",
+        "descricao": "Backup automático e seguro das suas finanças na sua conta Google.",
         "icone": "bi-google"
       }
     ]
@@ -82,14 +76,20 @@
   {
     "numero": "v1.0.13",
     "dataLancamento": "20/08/2026",
-    "titulo": "Despesas Recorrentes & Filtros no Extrato",
+    "titulo": "Despesas Fixas e Extrato",
     "isAtual": false,
     "destaques": [
       {
         "tipo": "Novidade",
-        "titulo": "Despesas Recorrentes Automáticas",
-        "descricao": "Criação automática de despesas fixas a cada virada de mês.",
+        "titulo": "Despesas Recorrentes",
+        "descricao": "Facilidade para cadastrar contas que se repetem todo mês.",
         "icone": "bi-arrow-repeat"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Busca e Filtros no Extrato",
+        "descricao": "Encontre lançamentos rapidamente por nome ou status de pagamento.",
+        "icone": "bi-search"
       }
     ]
   }
