@@ -7,6 +7,7 @@ public class ThemeService
     private const string ThemeKey = "manycontrol_theme";
     private readonly IJSRuntime _jsRuntime;
     private string _currentTheme = "dark";
+    private string? _customAccentColor = null;
     private bool _initialized = false;
 
     public event Action? OnThemeChanged;
@@ -19,6 +20,11 @@ public class ThemeService
     public string CurrentTheme => _currentTheme;
     public bool IsDark => _currentTheme == "dark";
     public bool IsLight => _currentTheme == "light";
+
+    public string? CustomAccentColor => _customAccentColor;
+    public string ActiveAccentColor => !string.IsNullOrWhiteSpace(_customAccentColor)
+        ? _customAccentColor
+        : (IsDark ? "#38bdf8" : "#0284c7");
 
     public async Task InicializarAsync()
     {
@@ -35,6 +41,12 @@ public class ThemeService
             {
                 _currentTheme = "dark";
             }
+
+            var savedAccent = await _jsRuntime.InvokeAsync<string?>("manyControlJs.getAccentColor");
+            if (!string.IsNullOrWhiteSpace(savedAccent))
+            {
+                _customAccentColor = savedAccent;
+            }
         }
         catch
         {
@@ -43,6 +55,10 @@ public class ThemeService
 
         _initialized = true;
         await ApplyThemeAsync(_currentTheme);
+        if (!string.IsNullOrWhiteSpace(_customAccentColor))
+        {
+            await ApplyAccentColorAsync(_customAccentColor);
+        }
         OnThemeChanged?.Invoke();
     }
 
@@ -50,6 +66,10 @@ public class ThemeService
     {
         _currentTheme = theme == "light" ? "light" : "dark";
         await ApplyThemeAsync(_currentTheme);
+        if (!string.IsNullOrWhiteSpace(_customAccentColor))
+        {
+            await ApplyAccentColorAsync(_customAccentColor);
+        }
         OnThemeChanged?.Invoke();
     }
 
@@ -57,6 +77,13 @@ public class ThemeService
     {
         var newTheme = _currentTheme == "dark" ? "light" : "dark";
         await SetThemeAsync(newTheme);
+    }
+
+    public async Task SetAccentColorAsync(string? color)
+    {
+        _customAccentColor = string.IsNullOrWhiteSpace(color) ? null : color.Trim();
+        await ApplyAccentColorAsync(_customAccentColor);
+        OnThemeChanged?.Invoke();
     }
 
     private async Task ApplyThemeAsync(string theme)
@@ -68,6 +95,18 @@ public class ThemeService
         catch (Exception ex)
         {
             Console.WriteLine($"Erro ao aplicar tema: {ex.Message}");
+        }
+    }
+
+    private async Task ApplyAccentColorAsync(string? color)
+    {
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("manyControlJs.setAccentColor", color ?? "");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao aplicar cor de destaque: {ex.Message}");
         }
     }
 }

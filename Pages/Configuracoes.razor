@@ -29,6 +29,48 @@
             <i class="bi bi-sun-fill"></i> Tema Claro
         </button>
     </div>
+
+    <!-- Seção: Personalização da Cor do Seletor e Destaques -->
+    <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-card);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <div style="font-size: 15px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-palette-fill" style="color: var(--bottom-nav-active);"></i> Cor do Seletor e Destaque
+            </div>
+            @if (!string.IsNullOrEmpty(ThemeService.CustomAccentColor))
+            {
+                <button type="button" class="btn-native-gray" style="padding: 4px 10px; font-size: 11px; min-height: 0; height: auto;" @onclick="ResetAccentColor" title="Restaurar cor padrão">
+                    Restaurar Padrão
+                </button>
+            }
+        </div>
+        <div style="font-size: 13px; color: var(--text-gray-400); margin-bottom: 12px; line-height: 1.4;">
+            Personalize a cor da casinha e do seletor da barra de navegação para combinar com o seu estilo.
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+            @foreach (var cor in PresetColors)
+            {
+                var isSelected = IsAccentSelected(cor.Hex);
+                <button type="button"
+                        class="accent-color-btn @(isSelected ? "selected" : "")"
+                        style="background-color: @cor.Hex;"
+                        title="@cor.Name"
+                        aria-label="@cor.Name"
+                        @onclick="() => SelectAccentColor(cor.Hex)">
+                    @if (isSelected)
+                    {
+                        <i class="bi bi-check-lg" style="color: #ffffff; font-size: 18px; text-shadow: 0 1px 2px rgba(0,0,0,0.7);"></i>
+                    }
+                </button>
+            }
+
+            <!-- Seletor Livre / Color Picker -->
+            <label class="accent-color-btn custom-picker-btn" title="Escolher cor personalizada" aria-label="Escolher cor personalizada" style="background: conic-gradient(from 180deg, red, yellow, lime, aqua, blue, magenta, red); cursor: pointer; position: relative;">
+                <input type="color" value="@(ThemeService.ActiveAccentColor)" @onchange="OnCustomColorChanged" style="opacity: 0; position: absolute; width: 100%; height: 100%; cursor: pointer; top: 0; left: 0;" />
+                <i class="bi bi-eyedropper" style="color: #ffffff; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); pointer-events: none;"></i>
+            </label>
+        </div>
+    </div>
 </div>
 
 <!-- Card 1: Google Drive (Modo NÃO CONECTADO) -->
@@ -369,6 +411,52 @@
     {
         await ThemeService.SetThemeAsync(theme);
         StateHasChanged();
+    }
+
+    private record AccentColorOption(string Name, string Hex);
+
+    private readonly List<AccentColorOption> PresetColors = new()
+    {
+        new("Azul ManyControl", "#38bdf8"),
+        new("Azul Royal", "#2563eb"),
+        new("Verde Esmeralda", "#10b981"),
+        new("Ciano Tropical", "#06b6d4"),
+        new("Roxo Violeta", "#8b5cf6"),
+        new("Rosa Magenta", "#ec4899"),
+        new("Laranja Âmbar", "#f59e0b"),
+        new("Vermelho Coral", "#ef4444")
+    };
+
+    private bool IsAccentSelected(string hex)
+    {
+        if (!string.IsNullOrEmpty(ThemeService.CustomAccentColor))
+        {
+            return string.Equals(ThemeService.CustomAccentColor, hex, StringComparison.OrdinalIgnoreCase);
+        }
+        var defaultHex = ThemeService.IsDark ? "#38bdf8" : "#0284c7";
+        return string.Equals(defaultHex, hex, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task SelectAccentColor(string hex)
+    {
+        await ThemeService.SetAccentColorAsync(hex);
+        StateHasChanged();
+    }
+
+    private async Task ResetAccentColor()
+    {
+        await ThemeService.SetAccentColorAsync(null);
+        StateHasChanged();
+    }
+
+    private async Task OnCustomColorChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (!string.IsNullOrWhiteSpace(val))
+        {
+            await ThemeService.SetAccentColorAsync(val);
+            StateHasChanged();
+        }
     }
 
     public void Dispose()

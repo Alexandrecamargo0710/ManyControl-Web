@@ -15,9 +15,15 @@
         (function() {
             var savedTheme = localStorage.getItem('manycontrol_theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
+            var savedAccent = localStorage.getItem('manycontrol_accent_color');
+            if (savedAccent) {
+                document.documentElement.style.setProperty('--accent-color', savedAccent);
+                document.documentElement.style.setProperty('--bottom-nav-active', savedAccent);
+                document.documentElement.style.setProperty('--color-blue-btn', savedAccent);
+            }
             if (savedTheme === 'light') {
                 var meta = document.querySelector('meta[name="theme-color"]');
-                if (meta) meta.setAttribute('content', '#f8fafc');
+                if (meta) meta.setAttribute('content', '#f1f5f9');
             }
         })();
     </script>

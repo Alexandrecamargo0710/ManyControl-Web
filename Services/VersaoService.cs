@@ -52,9 +52,9 @@ public class VersaoService
     {
         return _versoes.FirstOrDefault(v => v.IsAtual) ?? _versoes.FirstOrDefault() ?? new VersaoInfo
         {
-            Numero = "v1.0.17",
+            Numero = "v1.0.18",
             DataLancamento = "02/09/2026",
-            Titulo = "Tema Claro (Light Mode)",
+            Titulo = "Cores Personalizadas e Melhorias de UI",
             IsAtual = true
         };
     }
@@ -65,10 +65,41 @@ public class VersaoService
         [
             new VersaoInfo
             {
+                Numero = "v1.0.18",
+                DataLancamento = "02/09/2026",
+                Titulo = "Cores Personalizadas e Melhorias de UI",
+                IsAtual = true,
+                Destaques =
+                [
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Novidade",
+                        Titulo = "Cor do Seletor e Destaque Personalizada",
+                        Descricao = "Escolha entre várias cores pré-definidas ou use o seletor livre para personalizar a cor de destaque do seu ManyControl.",
+                        Icone = "bi-palette-fill"
+                    },
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Ajuste",
+                        Titulo = "Navegação da Barra Inferior",
+                        Descricao = "Correção no indicador ativo da barra de navegação, acompanhando perfeitamente a mudança de telas.",
+                        Icone = "bi-compass-fill"
+                    },
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Melhoria",
+                        Titulo = "Contraste dos Cards no Modo Claro",
+                        Descricao = "Cards com maior definição, contraste e sombras suaves no tema claro tanto no computador quanto no celular.",
+                        Icone = "bi-card-heading"
+                    }
+                ]
+            },
+            new VersaoInfo
+            {
                 Numero = "v1.0.17",
                 DataLancamento = "02/09/2026",
                 Titulo = "Tema Claro (Light Mode)",
-                IsAtual = true,
+                IsAtual = false,
                 Destaques =
                 [
                     new VersaoItemDestaque

@@ -1,28 +1,44 @@
-﻿@inject NavigationManager Navigation
+@inject NavigationManager Navigation
+@inject ManyControl_Web.Services.ThemeService ThemeService
+@implements IDisposable
 
 <nav class="bottom-nav">
-    <a href="./" class="nav-item @(IsActive("") ? "active" : "")">
-        <i class="bi bi-house-door-fill"></i>
-        <span>Início</span>
-    </a>
-    <a href="extrato" class="nav-item @(IsActive("extrato") ? "active" : "")">
-        <i class="bi bi-receipt"></i>
-        <span>Extrato</span>
-    </a>
-    <a href="configuracoes" class="nav-item @(IsActive("configuracoes") ? "active" : "")">
-        <i class="bi bi-cloud-arrow-up-fill"></i>
-        <span>Sincronização</span>
-    </a>
+    <div class="bottom-nav-container">
+        <NavLink href="" Match="NavLinkMatch.All" class="nav-item">
+            <i class="bi bi-house-door-fill"></i>
+            <span>Início</span>
+        </NavLink>
+        <NavLink href="extrato" class="nav-item">
+            <i class="bi bi-receipt"></i>
+            <span>Extrato</span>
+        </NavLink>
+        <NavLink href="configuracoes" class="nav-item">
+            <i class="bi bi-cloud-arrow-up-fill"></i>
+            <span>Sincronização</span>
+        </NavLink>
+    </div>
 </nav>
 
 @code {
-    private bool IsActive(string route)
+    protected override void OnInitialized()
     {
-        var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
-        if (string.IsNullOrEmpty(route))
-        {
-            return string.IsNullOrEmpty(relative);
-        }
-        return relative.StartsWith(route, StringComparison.OrdinalIgnoreCase);
+        Navigation.LocationChanged += OnLocationChanged;
+        ThemeService.OnThemeChanged += OnThemeChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    private void OnThemeChanged()
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        ThemeService.OnThemeChanged -= OnThemeChanged;
     }
 }
