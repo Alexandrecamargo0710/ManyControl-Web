@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "2aBzsQIe",
+  "version": "UwAkBUJ6",
   "assets": [
     {
       "hash": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
@@ -10,8 +10,8 @@ self.assetsManifest = {
       "url": "404.html"
     },
     {
-      "hash": "sha256-KepbWXgZsFy51wM9pIOBojgDwuC/hA770zKGlwf1r48=",
-      "url": "_framework/ManyControl-Web.78jay9jl8x.wasm"
+      "hash": "sha256-pFSBy8rbuqt0mX7+QtJX0b1cq9ELanVUXKjIzb7Ad0c=",
+      "url": "_framework/ManyControl-Web.4o8bsqdx1r.wasm"
     },
     {
       "hash": "sha256-vI9KGAwO4PKnXTe48gdTMozUGHi7FMiPdbiC5KUno/c=",
@@ -118,8 +118,8 @@ self.assetsManifest = {
       "url": "_framework/System.IO.Pipelines.9azjszgsci.wasm"
     },
     {
-      "hash": "sha256-GOgs4ncKSXjZ5K/ah9pl3XRuElWip2msXrz5kD2ODxw=",
-      "url": "_framework/System.Linq.svfuotkaqj.wasm"
+      "hash": "sha256-w/ww0oqV1I3Bzg9kVYBlvofqPx3cpcbbOVumr7oFl4s=",
+      "url": "_framework/System.Linq.twqwrm650a.wasm"
     },
     {
       "hash": "sha256-jRWlBGLo4WDUY/hTyBkNADQkQxjWpUpcFA1lsKDYEZ4=",
@@ -138,8 +138,8 @@ self.assetsManifest = {
       "url": "_framework/System.ObjectModel.2ue58bdwtg.wasm"
     },
     {
-      "hash": "sha256-FiovER7lxlm7j9pFL5NkOMeYUFQLr8eE/jLF0HWKYkQ=",
-      "url": "_framework/System.Private.CoreLib.agmlh0gzii.wasm"
+      "hash": "sha256-UtzhfK4ECI1PYbGym2RbFdsGKo/K+qqIldL51TqYqJs=",
+      "url": "_framework/System.Private.CoreLib.aedm72kk3b.wasm"
     },
     {
       "hash": "sha256-+1M5Z5jwDhLCWQXfUNuJPo9VbNhQd3dOoUH+tND7lzg=",
@@ -194,8 +194,8 @@ self.assetsManifest = {
       "url": "_framework/dotnet.runtime.zbexyp8zrs.js"
     },
     {
-      "hash": "sha256-S68qCFCYlTTbJ4Ojx1fkxTwyABxH0s2QA7jrdCF9PXk=",
-      "url": "_framework/dotnet.x1jdbtfh12.js"
+      "hash": "sha256-fwTrQyyt7EFeCs4xiwxof5WC4JmsUFf8GFvmO7CA7pE=",
+      "url": "_framework/dotnet.vsnggqjlnw.js"
     },
     {
       "hash": "sha256-SZLtQnRc0JkwqHab0VUVP7T3uBPSeYzxzDnpxPpUnHk=",
@@ -218,7 +218,7 @@ self.assetsManifest = {
       "url": "apple-touch-icon.png"
     },
     {
-      "hash": "sha256-BH2GbrFy5MB0/HqsEpkW9g1JqpgzdawZEatPqT1uhNs=",
+      "hash": "sha256-TGrQyv3rj6Koo/onLYCBGdmh/nO0+tL5KsVPz6fOs4c=",
       "url": "css/app.css"
     },
     {
@@ -238,7 +238,7 @@ self.assetsManifest = {
       "url": "icon-512.png"
     },
     {
-      "hash": "sha256-M+vU6c7oC3c5cZLDhT9YJq5vj79XttwUJ7fwbc+Vdhg=",
+      "hash": "sha256-UMEfo3BQWSPV5oDf484W/2hhn881VEbpxvknYlvDiIg=",
       "url": "index.html"
     },
     {
