@@ -266,36 +266,69 @@ input, textarea, select, button {
     background-color: var(--color-blue-btn);
     color: #ffffff;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 700;
-    padding: 10px 16px;
+    padding: 10px 14px;
     font-size: 13px;
     cursor: pointer;
     transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.25;
+    box-sizing: border-box;
+    gap: 6px;
+}
+
+.btn-native-blue:active {
+    transform: scale(0.98);
 }
 
 .btn-native-gray {
     background-color: var(--color-gray-btn);
     color: #ffffff;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 600;
-    padding: 10px 16px;
+    padding: 10px 14px;
     font-size: 13px;
     cursor: pointer;
     transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.25;
+    box-sizing: border-box;
+    gap: 6px;
+}
+
+.btn-native-gray:active {
+    transform: scale(0.98);
 }
 
 .btn-native-red {
     background-color: var(--color-red-btn);
     color: #ffffff;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 700;
-    padding: 10px 16px;
+    padding: 10px 14px;
     font-size: 13px;
     cursor: pointer;
     transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.25;
+    box-sizing: border-box;
+    gap: 6px;
+}
+
+.btn-native-red:active {
+    transform: scale(0.98);
 }
 
 /* Card de Transação Individual */
