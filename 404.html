@@ -15,9 +15,15 @@
         (function() {
             var savedTheme = localStorage.getItem('manycontrol_theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
+            var savedAccent = localStorage.getItem('manycontrol_accent_color');
+            if (savedAccent) {
+                document.documentElement.style.setProperty('--accent-color', savedAccent);
+                document.documentElement.style.setProperty('--bottom-nav-active', savedAccent);
+                document.documentElement.style.setProperty('--color-blue-btn', savedAccent);
+            }
             if (savedTheme === 'light') {
                 var meta = document.querySelector('meta[name="theme-color"]');
-                if (meta) meta.setAttribute('content', '#f8fafc');
+                if (meta) meta.setAttribute('content', '#f1f5f9');
             }
         })();
     </script>
@@ -49,17 +55,17 @@
   "imports": {
     "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.w3qd1tpl0e.js",
     "./_framework/dotnet.native.js": "./_framework/dotnet.native.vzj2a6aakt.js",
-    "./_framework/dotnet.js": "./_framework/dotnet.qp73a6k6bh.js",
+    "./_framework/dotnet.js": "./_framework/dotnet.qew7jqyeko.js",
     "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.zbexyp8zrs.js"
   },
   "scopes": {},
   "integrity": {
     "./_framework/blazor.webassembly.js": "sha256-lDXsDYFgm62F+YUvxES7IOTCXYpiHpU3uR45YdC6mq4=",
     "./_framework/blazor.webassembly.w3qd1tpl0e.js": "sha256-lDXsDYFgm62F+YUvxES7IOTCXYpiHpU3uR45YdC6mq4=",
-    "./_framework/dotnet.js": "sha256-MtSbdzY0vwr1PB0cL/zcRUEsGuyqsCovMJPYUgi+IVM=",
+    "./_framework/dotnet.js": "sha256-LiUjXcmolfjSG2pkJccyLKpvZTWMi+ppyIvo23E4ujI=",
     "./_framework/dotnet.native.js": "sha256-RezASHv+dbqV50cFnld76YiLhk4B+BjMAKs/euUdNyE=",
     "./_framework/dotnet.native.vzj2a6aakt.js": "sha256-RezASHv+dbqV50cFnld76YiLhk4B+BjMAKs/euUdNyE=",
-    "./_framework/dotnet.qp73a6k6bh.js": "sha256-MtSbdzY0vwr1PB0cL/zcRUEsGuyqsCovMJPYUgi+IVM=",
+    "./_framework/dotnet.qew7jqyeko.js": "sha256-LiUjXcmolfjSG2pkJccyLKpvZTWMi+ppyIvo23E4ujI=",
     "./_framework/dotnet.runtime.js": "sha256-MZMguyke9CroSQl+L/SHIGFkPTD+LtYGXkXjAvwWx40=",
     "./_framework/dotnet.runtime.zbexyp8zrs.js": "sha256-MZMguyke9CroSQl+L/SHIGFkPTD+LtYGXkXjAvwWx40="
   }

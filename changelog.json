@@ -1,9 +1,35 @@
 [
   {
+    "numero": "v1.0.18",
+    "dataLancamento": "02/09/2026",
+    "titulo": "Cores Personalizadas e Melhorias de UI",
+    "isAtual": true,
+    "destaques": [
+      {
+        "tipo": "Novidade",
+        "titulo": "Cor do Seletor e Destaque Personalizada",
+        "descricao": "Escolha entre várias cores pré-definidas ou use o seletor livre para personalizar a cor de destaque do seu ManyControl.",
+        "icone": "bi-palette-fill"
+      },
+      {
+        "tipo": "Ajuste",
+        "titulo": "Navegação da Barra Inferior",
+        "descricao": "Correção no indicador ativo da barra de navegação, acompanhando perfeitamente a mudança de telas.",
+        "icone": "bi-compass-fill"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Contraste dos Cards no Modo Claro",
+        "descricao": "Cards com maior definição, contraste e sombras suaves no tema claro tanto no computador quanto no celular.",
+        "icone": "bi-card-heading"
+      }
+    ]
+  },
+  {
     "numero": "v1.0.17",
     "dataLancamento": "02/09/2026",
     "titulo": "Tema Claro (Light Mode)",
-    "isAtual": true,
+    "isAtual": false,
     "destaques": [
       {
         "tipo": "Novidade",

@@ -62,15 +62,45 @@ window.manyControlJs = {
         document.documentElement.setAttribute('data-theme', t);
         localStorage.setItem('manycontrol_theme', t);
         
+        // Mantém a cor de destaque personalizada se houver, ou remove o override
+        const customAccent = localStorage.getItem('manycontrol_accent_color');
+        if (customAccent) {
+            document.documentElement.style.setProperty('--accent-color', customAccent);
+            document.documentElement.style.setProperty('--bottom-nav-active', customAccent);
+            document.documentElement.style.setProperty('--color-blue-btn', customAccent);
+        } else {
+            document.documentElement.style.removeProperty('--accent-color');
+            document.documentElement.style.removeProperty('--bottom-nav-active');
+            document.documentElement.style.removeProperty('--color-blue-btn');
+        }
+
         // Atualiza a meta tag theme-color no header
         const metaThemeColor = document.querySelector('meta[name="theme-color"]');
         if (metaThemeColor) {
-            metaThemeColor.setAttribute('content', t === 'light' ? '#f8fafc' : '#0b0f19');
+            metaThemeColor.setAttribute('content', t === 'light' ? '#f1f5f9' : '#0b0f19');
         }
     },
 
     getTheme: function () {
         return localStorage.getItem('manycontrol_theme') || 'dark';
+    },
+
+    setAccentColor: function (color) {
+        if (color && color.trim() !== '') {
+            document.documentElement.style.setProperty('--accent-color', color.trim());
+            document.documentElement.style.setProperty('--bottom-nav-active', color.trim());
+            document.documentElement.style.setProperty('--color-blue-btn', color.trim());
+            localStorage.setItem('manycontrol_accent_color', color.trim());
+        } else {
+            document.documentElement.style.removeProperty('--accent-color');
+            document.documentElement.style.removeProperty('--bottom-nav-active');
+            document.documentElement.style.removeProperty('--color-blue-btn');
+            localStorage.removeItem('manycontrol_accent_color');
+        }
+    },
+
+    getAccentColor: function () {
+        return localStorage.getItem('manycontrol_accent_color') || '';
     }
 };
 
