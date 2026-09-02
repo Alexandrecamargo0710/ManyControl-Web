@@ -220,7 +220,7 @@
     private string LastSyncText = "Hoje";
     private string SyncStatusText = "● Tudo sincronizado";
     private string MensagemBackup = string.Empty;
-    private string UpdateStatusText = "Você está utilizando a versão mais recente com os campos de data ajustados (v1.0.15)!";
+    private string UpdateStatusText = "Toque em 'Verificar Atualizações' para forçar a sincronização da versão mais recente no seu aparelho.";
     private bool IsHistoricoModalOpen = false;
 
     private DotNetObjectReference<GoogleDriveWebService>? _dotNetRef;
@@ -310,11 +310,10 @@
 
     private async Task ChecarAtualizacao()
     {
-        UpdateStatusText = "Checando atualizações no servidor...";
+        UpdateStatusText = "Limpando cache e recarregando para a versão mais recente...";
         StateHasChanged();
-        await Task.Delay(500);
-        UpdateStatusText = $"✓ Você já está utilizando a versão mais recente ({VersaoService.VersaoAtual})!";
-        StateHasChanged();
+        await Task.Delay(300);
+        await JSRuntime.InvokeVoidAsync("manyControlJs.forceUpdateAndReload");
     }
 
     private void AbrirHistoricoVersoes()

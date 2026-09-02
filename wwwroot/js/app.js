@@ -1,4 +1,4 @@
-﻿let tokenClient = null;
+let tokenClient = null;
 let googleAccessToken = localStorage.getItem('manycontrol_google_token') || null;
 
 window.manyControlJs = {
@@ -35,6 +35,26 @@ window.manyControlJs = {
         if ('vibrate' in navigator) {
             navigator.vibrate(duration || 40);
         }
+    },
+
+    forceUpdateAndReload: async function () {
+        try {
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                for (const key of keys) {
+                    await caches.delete(key);
+                }
+            }
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const reg of registrations) {
+                    await reg.unregister();
+                }
+            }
+        } catch (e) {
+            console.error('Erro ao limpar cache:', e);
+        }
+        window.location.reload(true);
     }
 };
 
