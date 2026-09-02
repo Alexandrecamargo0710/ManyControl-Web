@@ -453,7 +453,7 @@ input, textarea, select, button {
 .trans-title {
     font-size: 15px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -463,13 +463,13 @@ input, textarea, select, button {
 .trans-val-green {
     font-size: 16px;
     font-weight: 700;
-    color: #34d399;
+    color: #10b981;
 }
 
 .trans-val-red {
     font-size: 16px;
     font-weight: 700;
-    color: #f87171;
+    color: #ef4444;
 }
 
 .trans-item-bottom {
@@ -477,7 +477,7 @@ input, textarea, select, button {
     align-items: center;
     justify-content: space-between;
     font-size: 12px;
-    color: var(--text-gray-400);
+    color: var(--text-secondary);
 }
 
 .btn-small-edit {
