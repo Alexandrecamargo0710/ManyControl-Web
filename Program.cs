@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using ManyControl_Web;
 using ManyControl_Web.Services;
@@ -14,5 +14,6 @@ builder.Services.AddScoped<StorageService>();
 builder.Services.AddScoped<FinanceWebService>();
 builder.Services.AddScoped<BackupService>();
 builder.Services.AddScoped<GoogleDriveWebService>();
+builder.Services.AddScoped<VersaoService>();
 
 await builder.Build().RunAsync();
