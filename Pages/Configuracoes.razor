@@ -65,11 +65,11 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 12px; margin-top: 8px;">
-            <button class="btn-native-blue" style="height: 46px; font-size: 15px;" @onclick="SincronizarGoogleAgora">
-                🔄 Sincronizar Agora
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+            <button class="btn-native-blue" style="min-height: 44px;" @onclick="SincronizarGoogleAgora">
+                <i class="bi bi-arrow-repeat"></i> Sincronizar Agora
             </button>
-            <button class="btn-native-gray" style="height: 46px; font-size: 14px; color: #f87171;" @onclick="DesconectarGoogle">
+            <button class="btn-native-gray" style="min-height: 44px; color: #f87171;" @onclick="DesconectarGoogle">
                 Desconectar Conta
             </button>
         </div>
@@ -83,9 +83,9 @@
         Exporte uma cópia de segurança física no seu computador ou restaure um backup antigo a qualquer momento sem precisar de internet.
     </div>
 
-    <div style="display: flex; gap: 12px; margin-top: 6px;">
-        <button class="btn-native-gray" @onclick="ExportarBackup">Exportar Backup Local</button>
-        <button class="btn-native-gray" @onclick="TriggerImportFile">Restaurar de Arquivo</button>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+        <button class="btn-native-gray" style="min-height: 44px;" @onclick="ExportarBackup">Exportar Backup Local</button>
+        <button class="btn-native-gray" style="min-height: 44px;" @onclick="TriggerImportFile">Restaurar de Arquivo</button>
     </div>
 
     <InputFile id="backupFileInput" OnChange="ProcessarArquivoImportado" style="display: none;" accept=".json" />
@@ -149,12 +149,12 @@
         @UpdateStatusText
     </div>
 
-    <div style="display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
-        <button class="btn-native-blue" style="background-color: #0284c7; flex: 1; min-width: 180px;" @onclick="ChecarAtualizacao">
-            🔄 Verificar Atualizações
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+        <button class="btn-native-blue" style="background-color: #0284c7; min-height: 44px;" @onclick="ChecarAtualizacao">
+            <i class="bi bi-arrow-repeat"></i> Verificar Atualizações
         </button>
-        <button class="btn-native-gray" style="flex: 1; min-width: 180px;" @onclick="AbrirHistoricoVersoes">
-            📜 Histórico de Versões
+        <button class="btn-native-gray" style="min-height: 44px;" @onclick="AbrirHistoricoVersoes">
+            <i class="bi bi-clock-history"></i> Histórico de Versões
         </button>
     </div>
 </div>
