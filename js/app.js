@@ -55,6 +55,22 @@ window.manyControlJs = {
             console.error('Erro ao limpar cache:', e);
         }
         window.location.reload(true);
+    },
+
+    setTheme: function (theme) {
+        const t = theme === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('manycontrol_theme', t);
+        
+        // Atualiza a meta tag theme-color no header
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', t === 'light' ? '#f8fafc' : '#0b0f19');
+        }
+    },
+
+    getTheme: function () {
+        return localStorage.getItem('manycontrol_theme') || 'dark';
     }
 };
 
