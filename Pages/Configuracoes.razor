@@ -229,6 +229,7 @@
     {
         _dotNetRef = DotNetObjectReference.Create(GoogleDriveService);
         GoogleDriveService.OnStatusChanged += AtualizarEstado;
+        await VersaoService.CarregarChangelogAsync();
         await CarregarEstadoAsync();
     }
 

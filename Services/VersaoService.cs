@@ -1,43 +1,121 @@
+using System.Net.Http.Json;
 using ManyControl_Web.Models;
 
 namespace ManyControl_Web.Services;
 
 public class VersaoService
 {
-    public string VersaoAtual => "v1.0.15";
+    private readonly HttpClient _http;
+    private List<VersaoInfo> _versoes = [];
+    private bool _loaded = false;
+
+    public VersaoService(HttpClient http)
+    {
+        _http = http;
+        _versoes = GetFallbackVersoes();
+    }
+
+    public string VersaoAtual => GetVersaoAtualInfo().Numero;
+
+    public async Task<List<VersaoInfo>> CarregarChangelogAsync()
+    {
+        try
+        {
+            // Busca o changelog.json com timestamp para nunca ficar preso em cache do navegador
+            var url = $"changelog.json?t={DateTime.UtcNow.Ticks}";
+            var dados = await _http.GetFromJsonAsync<List<VersaoInfo>>(url);
+            if (dados != null && dados.Count > 0)
+            {
+                _versoes = dados;
+                _loaded = true;
+                return _versoes;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Aviso ao carregar changelog dinâmico: {ex.Message}");
+        }
+
+        if (!_loaded)
+        {
+            _versoes = GetFallbackVersoes();
+        }
+
+        return _versoes;
+    }
 
     public List<VersaoInfo> GetHistoricoVersoes()
+    {
+        return _versoes;
+    }
+
+    public VersaoInfo GetVersaoAtualInfo()
+    {
+        return _versoes.FirstOrDefault(v => v.IsAtual) ?? _versoes.FirstOrDefault() ?? new VersaoInfo
+        {
+            Numero = "v1.0.16",
+            DataLancamento = "02/09/2026",
+            Titulo = "Atualização do Sistema",
+            IsAtual = true
+        };
+    }
+
+    private List<VersaoInfo> GetFallbackVersoes()
     {
         return
         [
             new VersaoInfo
             {
-                Numero = "v1.0.15",
+                Numero = "v1.0.16",
                 DataLancamento = "02/09/2026",
-                Titulo = "Ajuste nos Campos de Data & Melhorias de Layout",
+                Titulo = "Alinhamento de Botões, Remoção de Emojis & PWA Instantâneo",
                 IsAtual = true,
                 Destaques =
                 [
                     new VersaoItemDestaque
                     {
                         Tipo = "Ajuste",
-                        Titulo = "Campos de Data sem Transbordo",
-                        Descricao = "Ajuste no dimensionamento e espaçamento de todos os seletores de data (lançamentos, vencimentos e edição), corrigindo o transbordo lateral em telas de smartphones (iOS/Android) e no desktop.",
-                        Icone = "bi-calendar-date-fill"
+                        Titulo = "Alinhamento e Centralização dos Botões",
+                        Descricao = "Correção do alinhamento do botão 'Sincronizar Agora' e botões em tela de celulares, eliminando quebras de linha e centralizando o texto com padrão de toque móvel.",
+                        Icone = "bi-layout-text-window"
                     },
                     new VersaoItemDestaque
                     {
                         Tipo = "Melhoria",
-                        Titulo = "Suporte Nativo a Dark Mode em Inputs",
-                        Descricao = "Inclusão de esquema escuro nativo para os seletores de calendário e botões de alternância (toggles) integrados ao design do app.",
-                        Icone = "bi-moon-stars-fill"
+                        Titulo = "Remoção de Emojis dos Botões",
+                        Descricao = "Substituição de emojis por ícones vetoriais elegantes e padronizados do Bootstrap Icons em todas as telas e seletores.",
+                        Icone = "bi-slash-circle"
                     },
                     new VersaoItemDestaque
                     {
                         Tipo = "Novidade",
-                        Titulo = "Notas de Atualização Detalhadas",
-                        Descricao = "Substituição do texto genérico pelo histórico completo e discriminado de mudanças a cada nova versão.",
-                        Icone = "bi-journal-check"
+                        Titulo = "Atualização Imediata do PWA",
+                        Descricao = "Implementação de ativação instantânea no Service Worker (skipWaiting e clients.claim) e limpeza forçada de cache com recarregamento em 1 clique.",
+                        Icone = "bi-lightning-charge-fill"
+                    },
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Ajuste",
+                        Titulo = "Campos de Data sem Transbordo",
+                        Descricao = "Ajuste definitivo no dimensionamento dos campos de data para impedir qualquer transbordo lateral em telas de smartphones (iOS/Android) e no desktop.",
+                        Icone = "bi-calendar-date-fill"
+                    }
+                ]
+            },
+            new VersaoInfo
+            {
+                Numero = "v1.0.15",
+                DataLancamento = "02/09/2026",
+                Titulo = "Ajuste nos Campos de Data & Dark Mode",
+                IsAtual = false,
+                Destaques =
+                [
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Ajuste",
+                        Titulo = "Campos de Data sem Transbordo",
+                        Descricao = "Ajuste no dimensionamento dos seletores de data e suporte a Dark Mode nativo.",
+                        Icone = "bi-calendar-date-fill"
                     }
                 ]
             },
@@ -55,45 +133,9 @@ public class VersaoService
                         Titulo = "Sincronização com Google Drive",
                         Descricao = "Backup automático e sincronização em nuvem diretamente na sua pasta do Google Drive.",
                         Icone = "bi-google"
-                    },
-                    new VersaoItemDestaque
-                    {
-                        Tipo = "Melhoria",
-                        Titulo = "Card de Balanço do Mês",
-                        Descricao = "Visualização rápida de comprometimento de renda e saldo líquido mensal.",
-                        Icone = "bi-wallet2"
-                    }
-                ]
-            },
-            new VersaoInfo
-            {
-                Numero = "v1.0.13",
-                DataLancamento = "20/08/2026",
-                Titulo = "Despesas Recorrentes & Filtros no Extrato",
-                IsAtual = false,
-                Destaques =
-                [
-                    new VersaoItemDestaque
-                    {
-                        Tipo = "Novidade",
-                        Titulo = "Despesas Recorrentes Automáticas",
-                        Descricao = "Criação automática de despesas fixas a cada virada de mês.",
-                        Icone = "bi-arrow-repeat"
-                    },
-                    new VersaoItemDestaque
-                    {
-                        Tipo = "Melhoria",
-                        Titulo = "Busca e Filtros no Extrato",
-                        Descricao = "Filtragem instantânea por status de pagamento (paga/pendente) e busca textual por descrição.",
-                        Icone = "bi-search"
                     }
                 ]
             }
         ];
-    }
-
-    public VersaoInfo GetVersaoAtualInfo()
-    {
-        return GetHistoricoVersoes().First(v => v.IsAtual);
     }
 }

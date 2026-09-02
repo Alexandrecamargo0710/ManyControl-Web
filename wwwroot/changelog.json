@@ -1,0 +1,94 @@
+[
+  {
+    "numero": "v1.0.16",
+    "dataLancamento": "02/09/2026",
+    "titulo": "Alinhamento de Botões, Remoção de Emojis & PWA Instantâneo",
+    "isAtual": true,
+    "destaques": [
+      {
+        "tipo": "Ajuste",
+        "titulo": "Alinhamento e Centralização dos Botões",
+        "descricao": "Correção do alinhamento do botão 'Sincronizar Agora' e botões em tela de celulares, eliminando quebras de linha e centralizando o texto com padrão de toque móvel.",
+        "icone": "bi-layout-text-window"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Remoção de Emojis dos Botões",
+        "descricao": "Substituição de emojis por ícones vetoriais elegantes e padronizados do Bootstrap Icons em todas as telas e seletores.",
+        "icone": "bi-slash-circle"
+      },
+      {
+        "tipo": "Novidade",
+        "titulo": "Atualização Imediata do PWA",
+        "descricao": "Implementação de ativação instantânea no Service Worker (skipWaiting e clients.claim) e limpeza forçada de cache com recarregamento em 1 clique.",
+        "icone": "bi-lightning-charge-fill"
+      },
+      {
+        "tipo": "Ajuste",
+        "titulo": "Campos de Data sem Transbordo",
+        "descricao": "Ajuste definitivo no dimensionamento dos campos de data para impedir qualquer transbordo lateral em telas de smartphones (iOS/Android) e no desktop.",
+        "icone": "bi-calendar-date-fill"
+      }
+    ]
+  },
+  {
+    "numero": "v1.0.15",
+    "dataLancamento": "02/09/2026",
+    "titulo": "Ajuste nos Campos de Data & Dark Mode",
+    "isAtual": false,
+    "destaques": [
+      {
+        "tipo": "Ajuste",
+        "titulo": "Campos de Data sem Transbordo",
+        "descricao": "Ajuste no dimensionamento dos seletores de data e suporte a Dark Mode nativo.",
+        "icone": "bi-calendar-date-fill"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Suporte Nativo a Dark Mode em Inputs",
+        "descricao": "Inclusão de esquema escuro nativo para os seletores de calendário.",
+        "icone": "bi-moon-stars-fill"
+      }
+    ]
+  },
+  {
+    "numero": "v1.0.14",
+    "dataLancamento": "28/08/2026",
+    "titulo": "Sincronização Google Drive & Balanço Visual",
+    "isAtual": false,
+    "destaques": [
+      {
+        "tipo": "Novidade",
+        "titulo": "Sincronização com Google Drive",
+        "descricao": "Backup automático e sincronização em nuvem diretamente na sua pasta do Google Drive.",
+        "icone": "bi-google"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Card de Balanço do Mês",
+        "descricao": "Visualização rápida de comprometimento de renda e saldo líquido mensal.",
+        "icone": "bi-wallet2"
+      }
+    ]
+  },
+  {
+    "numero": "v1.0.13",
+    "dataLancamento": "20/08/2026",
+    "titulo": "Despesas Recorrentes & Filtros no Extrato",
+    "isAtual": false,
+    "destaques": [
+      {
+        "tipo": "Novidade",
+        "titulo": "Despesas Recorrentes Automáticas",
+        "descricao": "Criação automática de despesas fixas a cada virada de mês.",
+        "icone": "bi-arrow-repeat"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Busca e Filtros no Extrato",
+        "descricao": "Filtragem instantânea por status de pagamento e busca textual por descrição.",
+        "icone": "bi-search"
+      }
+    ]
+  }
+]
