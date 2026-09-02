@@ -57,13 +57,13 @@
 </div>
 
 <!-- Card Balanço do Mês -->
-<div class="native-card" style="background-color: #1f2937; margin-top: -6px;">
+<div class="native-card" style="background-color: var(--card-balanco-bg); margin-top: -6px;">
     <div style="display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 13px; color: #e5e7eb;">Balanço do Mês</span>
-            <span class="metric-card-info" style="color: #9ca3af;" @onclick='() => ExplicarMetrica("balanco")'>ⓘ</span>
+            <span style="font-size: 13px; color: var(--text-secondary);">Balanço do Mês</span>
+            <span class="metric-card-info" style="color: var(--text-muted);" @onclick='() => ExplicarMetrica("balanco")'>ⓘ</span>
         </div>
-        <span style="font-size: 20px; font-weight: 700; color: #ffffff;">@SaldoMes.ToString("C2", PtBr)</span>
+        <span style="font-size: 20px; font-weight: 700; color: var(--text-primary);">@SaldoMes.ToString("C2", PtBr)</span>
     </div>
 </div>
 
@@ -72,10 +72,10 @@
 {
     <div class="native-card" style="padding: 14px 12px; margin-top: -6px;">
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 6px;">
-            <span style="color: #9ca3af;">Comprometimento das receitas</span>
-            <span style="color: #e5e7eb; font-weight: 700;">Despesas representam @((ProporcaoDespesas * 100).ToString("F0"))% das receitas</span>
+            <span style="color: var(--text-muted);">Comprometimento das receitas</span>
+            <span style="color: var(--text-secondary); font-weight: 700;">Despesas representam @((ProporcaoDespesas * 100).ToString("F0"))% das receitas</span>
         </div>
-        <div style="width: 100%; height: 6px; background-color: #065f46; border-radius: 999px; overflow: hidden;">
+        <div style="width: 100%; height: 6px; background-color: var(--card-receitas-bg); border-radius: 999px; overflow: hidden;">
             <div style="width: @Math.Min(100, ProporcaoDespesas * 100)%; height: 100%; background-color: #f87171; transition: width 0.3s;"></div>
         </div>
     </div>
@@ -102,11 +102,11 @@
 
 <!-- Campo de Busca -->
 <div class="form-field" style="margin-bottom: 16px;">
-    <input type="text" class="native-input" placeholder="🔍 Buscar por descrição..." @bind="TermoBusca" @bind:event="oninput" />
+    <input type="text" class="native-input" placeholder="Buscar por descrição..." @bind="TermoBusca" @bind:event="oninput" />
 </div>
 
 <!-- Lista de Transações Filtradas -->
-<div style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">
+<div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">
     Lançamentos (@ItensFiltrados.Count)
 </div>
 
@@ -182,14 +182,14 @@ else
                     <input type="date" class="native-input" @bind="EditVencimento" />
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 14px; color: #ffffff;">Despesa recorrente</span>
+                    <span style="font-size: 14px; color: var(--text-primary);">Despesa recorrente</span>
                     <div class="toggle-switch" @onclick="() => EditRecorrente = !EditRecorrente">
                         <input type="checkbox" checked="@EditRecorrente" />
                         <span class="slider"></span>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                    <span style="font-size: 14px; color: #ffffff;">Despesa já paga</span>
+                    <span style="font-size: 14px; color: var(--text-primary);">Despesa já paga</span>
                     <div class="toggle-switch" @onclick="() => EditPaga = !EditPaga">
                         <input type="checkbox" checked="@EditPaga" />
                         <span class="slider"></span>
@@ -199,7 +199,7 @@ else
             else
             {
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; margin-top: 8px;">
-                    <span style="font-size: 14px; color: #ffffff;">Receita já recebida</span>
+                    <span style="font-size: 14px; color: var(--text-primary);">Receita já recebida</span>
                     <div class="toggle-switch" @onclick="() => EditRecebida = !EditRecebida">
                         <input type="checkbox" checked="@EditRecebida" />
                         <span class="slider"></span>

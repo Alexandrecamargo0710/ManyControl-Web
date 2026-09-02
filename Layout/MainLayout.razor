@@ -1,13 +1,27 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject ManyControl_Web.Services.ThemeService ThemeService
+@implements IDisposable
 
 <div class="app-layout">
     <header class="main-content" style="padding-bottom: 0;">
-        <div class="native-header">
-            <img src="icon-192.png" alt="ManyControl" class="native-header-logo" />
-            <div style="display: flex; flex-direction: column;">
-                <div class="native-header-title">ManyControl</div>
-                <div class="native-header-sub">Gestão Financeira e Sincronização em Nuvem</div>
+        <div class="native-header" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <img src="icon-192.png" alt="ManyControl" class="native-header-logo" />
+                <div style="display: flex; flex-direction: column;">
+                    <div class="native-header-title">ManyControl</div>
+                    <div class="native-header-sub">Gestão Financeira e Sincronização em Nuvem</div>
+                </div>
             </div>
+            <button class="btn-theme-toggle" @onclick="ToggleTheme" title="Alternar tema claro / escuro" aria-label="Alternar tema">
+                @if (ThemeService.IsDark)
+                {
+                    <i class="bi bi-sun-fill" style="color: #fbbf24;"></i>
+                }
+                else
+                {
+                    <i class="bi bi-moon-stars-fill" style="color: #0284c7;"></i>
+                }
+            </button>
         </div>
     </header>
 
@@ -17,3 +31,21 @@
 
     <ManyControl_Web.Components.BottomNav />
 </div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        ThemeService.OnThemeChanged += StateHasChanged;
+        await ThemeService.InicializarAsync();
+    }
+
+    private async Task ToggleTheme()
+    {
+        await ThemeService.ToggleThemeAsync();
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= StateHasChanged;
+    }
+}

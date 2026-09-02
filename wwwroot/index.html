@@ -6,10 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>ManyControl</title>
     
-    <base href="/ManyControl-Web/" />
+    <base href="/" />
 
     <meta name="description" content="Controle financeiro pessoal inteligente, rápido e seguro." />
     <meta name="theme-color" content="#0b0f19" />
+    
+    <script>
+        (function() {
+            var savedTheme = localStorage.getItem('manycontrol_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (savedTheme === 'light') {
+                var meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) meta.setAttribute('content', '#f8fafc');
+            }
+        })();
+    </script>
     
     <!-- iOS Meta Tags & PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />

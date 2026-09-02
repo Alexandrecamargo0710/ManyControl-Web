@@ -13,10 +13,10 @@
 
 <!-- Card de Sincronização -->
 <div class="native-card">
-    <div style="font-size: 14px; color: #ffffff;">Sincronização</div>
-    <div style="font-size: 18px; font-weight: 700; color: #ffffff;">@UltimaSincronizacaoTexto</div>
-    <div style="font-size: 12px; color: var(--text-gray-300);">Armazenamento local seguro do dispositivo</div>
-    <div style="font-size: 12px; color: #a7f3d0;">● Tudo sincronizado</div>
+    <div style="font-size: 14px; color: var(--text-primary);">Sincronização</div>
+    <div style="font-size: 18px; font-weight: 700; color: var(--text-primary);">@UltimaSincronizacaoTexto</div>
+    <div style="font-size: 12px; color: var(--text-gray-400);">Armazenamento local seguro do dispositivo</div>
+    <div style="font-size: 12px; color: #10b981;">● Tudo sincronizado</div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
         <button class="btn-native-blue" @onclick="SincronizarAgora">Sincronizar agora</button>
         <button class="btn-native-gray" @onclick="TriggerImportBackup">Importar backup</button>
@@ -98,7 +98,7 @@
 
 <!-- Card: Adicionar Receita -->
 <div class="native-card">
-    <div style="font-size: 20px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">Adicionar receita</div>
+    <div style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Adicionar receita</div>
     <div class="form-field">
         <input type="text" class="native-input" placeholder="Descrição" @bind="NovaReceitaDescricao" />
     </div>
@@ -113,7 +113,7 @@
     <!-- Switch Receita já recebida -->
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 6px 0;">
         <div>
-            <div style="font-size: 14px; color: #ffffff;">Receita já recebida</div>
+            <div style="font-size: 14px; color: var(--text-primary);">Receita já recebida</div>
             <div style="font-size: 12px; color: var(--text-gray-500);">Marque se este valor já foi creditado na conta</div>
         </div>
         <div class="toggle-switch" @onclick="() => NovaReceitaRecebida = !NovaReceitaRecebida">
@@ -130,7 +130,7 @@
 
 <!-- Card: Adicionar Despesa -->
 <div class="native-card">
-    <div style="font-size: 20px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">Adicionar despesa</div>
+    <div style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Adicionar despesa</div>
     <div class="form-field">
         <input type="text" class="native-input" placeholder="Descrição" @bind="NovaDespesaDescricao" />
     </div>
@@ -149,7 +149,7 @@
     <!-- Switch Recorrente -->
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 6px 0;">
         <div>
-            <div style="font-size: 14px; color: #ffffff;">Despesa recorrente</div>
+            <div style="font-size: 14px; color: var(--text-primary);">Despesa recorrente</div>
             <div style="font-size: 12px; color: var(--text-gray-500);">Ative caso essa despesa se repete todo mês</div>
         </div>
         <div class="toggle-switch" @onclick="() => NovaDespesaRecorrente = !NovaDespesaRecorrente">
@@ -161,7 +161,7 @@
     <!-- Switch Paga -->
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 6px 0;">
         <div>
-            <div style="font-size: 14px; color: #ffffff;">Despesa já paga</div>
+            <div style="font-size: 14px; color: var(--text-primary);">Despesa já paga</div>
             <div style="font-size: 12px; color: var(--text-gray-500);">Marque se esta conta já foi quitada</div>
         </div>
         <div class="toggle-switch" @onclick="() => NovaDespesaPaga = !NovaDespesaPaga">
@@ -178,7 +178,7 @@
 
 <!-- Lista de Despesas do Mês -->
 <div style="margin-top: 20px; margin-bottom: 24px;">
-    <div style="font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">Despesas do mês</div>
+    <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">Despesas do mês</div>
     @if (DespesasDoMes.Count == 0)
     {
         <div style="padding: 16px; text-align: center; color: var(--text-gray-500); font-size: 13px; background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--border-card);">
@@ -219,7 +219,7 @@
 
 <!-- Lista de Receitas do Mês -->
 <div style="margin-bottom: 24px;">
-    <div style="font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">Receitas do mês</div>
+    <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">Receitas do mês</div>
     @if (ReceitasDoMes.Count == 0)
     {
         <div style="padding: 16px; text-align: center; color: var(--text-gray-500); font-size: 13px; background: var(--bg-card); border-radius: 12px; border: 1px dashed var(--border-card);">
@@ -276,14 +276,14 @@
                     <input type="date" class="native-input" @bind="EditVencimento" />
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 14px; color: #ffffff;">Despesa recorrente</span>
+                    <span style="font-size: 14px; color: var(--text-primary);">Despesa recorrente</span>
                     <div class="toggle-switch" @onclick="() => EditRecorrente = !EditRecorrente">
                         <input type="checkbox" checked="@EditRecorrente" />
                         <span class="slider"></span>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                    <span style="font-size: 14px; color: #ffffff;">Despesa já paga</span>
+                    <span style="font-size: 14px; color: var(--text-primary);">Despesa já paga</span>
                     <div class="toggle-switch" @onclick="() => EditPaga = !EditPaga">
                         <input type="checkbox" checked="@EditPaga" />
                         <span class="slider"></span>
@@ -293,7 +293,7 @@
             else
             {
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; margin-top: 8px;">
-                    <span style="font-size: 14px; color: #ffffff;">Receita já recebida</span>
+                    <span style="font-size: 14px; color: var(--text-primary);">Receita já recebida</span>
                     <div class="toggle-switch" @onclick="() => EditRecebida = !EditRecebida">
                         <input type="checkbox" checked="@EditRecebida" />
                         <span class="slider"></span>

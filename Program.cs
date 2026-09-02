@@ -15,5 +15,6 @@ builder.Services.AddScoped<FinanceWebService>();
 builder.Services.AddScoped<BackupService>();
 builder.Services.AddScoped<GoogleDriveWebService>();
 builder.Services.AddScoped<VersaoService>();
+builder.Services.AddScoped<ThemeService>();
 
 await builder.Build().RunAsync();

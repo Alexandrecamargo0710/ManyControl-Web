@@ -1,4 +1,4 @@
-﻿name: Deploy ManyControl Web PWA to GitHub Pages
+name: Deploy ManyControl Web PWA to GitHub Pages
 
 on:
   push:
@@ -37,6 +37,9 @@ jobs:
         run: |
           # Garante que .nojekyll exista para o GitHub Pages não ignorar arquivos com _
           touch release/wwwroot/.nojekyll
+          
+          # Ajusta a base tag de / para /ManyControl-Web/ para o GitHub Pages
+          sed -i 's|<base href="/" />|<base href="/ManyControl-Web/" />|g' release/wwwroot/index.html
           
           # Cria o 404.html copiando index.html para suporte a SPA routing
           cp release/wwwroot/index.html release/wwwroot/404.html

@@ -53,9 +53,9 @@ public class VersaoService
     {
         return _versoes.FirstOrDefault(v => v.IsAtual) ?? _versoes.FirstOrDefault() ?? new VersaoInfo
         {
-            Numero = "v1.0.16",
+            Numero = "v1.0.17",
             DataLancamento = "02/09/2026",
-            Titulo = "Atualização do Sistema",
+            Titulo = "Tema Claro (Light Mode) & Alternador Dinâmico",
             IsAtual = true
         };
     }
@@ -66,39 +66,49 @@ public class VersaoService
         [
             new VersaoInfo
             {
+                Numero = "v1.0.17",
+                DataLancamento = "02/09/2026",
+                Titulo = "Tema Claro (Light Mode) & Alternador Dinâmico",
+                IsAtual = true,
+                Destaques =
+                [
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Novidade",
+                        Titulo = "Tema Claro (Light Mode)",
+                        Descricao = "Implementação completa do tema claro elegante com alto contraste para todas as telas, cards de métricas, extratos, formulários e modais.",
+                        Icone = "bi-sun-fill"
+                    },
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Melhoria",
+                        Titulo = "Alternador Rápido de Temas",
+                        Descricao = "Botão de alternância instantânea no cabeçalho sincronizado em tempo real com a tela de configurações e persistência automática no seu dispositivo.",
+                        Icone = "bi-moon-stars-fill"
+                    },
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Ajuste",
+                        Titulo = "Alinhamento e Centralização dos Botões",
+                        Descricao = "Botões com altura mínima de 44px e texto 100% centralizado na horizontal e vertical em smartphones.",
+                        Icone = "bi-layout-text-window"
+                    }
+                ]
+            },
+            new VersaoInfo
+            {
                 Numero = "v1.0.16",
                 DataLancamento = "02/09/2026",
                 Titulo = "Alinhamento de Botões, Remoção de Emojis & PWA Instantâneo",
-                IsAtual = true,
+                IsAtual = false,
                 Destaques =
                 [
                     new VersaoItemDestaque
                     {
                         Tipo = "Ajuste",
                         Titulo = "Alinhamento e Centralização dos Botões",
-                        Descricao = "Correção do alinhamento do botão 'Sincronizar Agora' e botões em tela de celulares, eliminando quebras de linha e centralizando o texto com padrão de toque móvel.",
+                        Descricao = "Correção do alinhamento do botão 'Sincronizar Agora' e botões em tela de celulares.",
                         Icone = "bi-layout-text-window"
-                    },
-                    new VersaoItemDestaque
-                    {
-                        Tipo = "Melhoria",
-                        Titulo = "Remoção de Emojis dos Botões",
-                        Descricao = "Substituição de emojis por ícones vetoriais elegantes e padronizados do Bootstrap Icons em todas as telas e seletores.",
-                        Icone = "bi-slash-circle"
-                    },
-                    new VersaoItemDestaque
-                    {
-                        Tipo = "Novidade",
-                        Titulo = "Atualização Imediata do PWA",
-                        Descricao = "Implementação de ativação instantânea no Service Worker (skipWaiting e clients.claim) e limpeza forçada de cache com recarregamento em 1 clique.",
-                        Icone = "bi-lightning-charge-fill"
-                    },
-                    new VersaoItemDestaque
-                    {
-                        Tipo = "Ajuste",
-                        Titulo = "Campos de Data sem Transbordo",
-                        Descricao = "Ajuste definitivo no dimensionamento dos campos de data para impedir qualquer transbordo lateral em telas de smartphones (iOS/Android) e no desktop.",
-                        Icone = "bi-calendar-date-fill"
                     }
                 ]
             },
@@ -116,23 +126,6 @@ public class VersaoService
                         Titulo = "Campos de Data sem Transbordo",
                         Descricao = "Ajuste no dimensionamento dos seletores de data e suporte a Dark Mode nativo.",
                         Icone = "bi-calendar-date-fill"
-                    }
-                ]
-            },
-            new VersaoInfo
-            {
-                Numero = "v1.0.14",
-                DataLancamento = "28/08/2026",
-                Titulo = "Sincronização Google Drive & Balanço Visual",
-                IsAtual = false,
-                Destaques =
-                [
-                    new VersaoItemDestaque
-                    {
-                        Tipo = "Novidade",
-                        Titulo = "Sincronização com Google Drive",
-                        Descricao = "Backup automático e sincronização em nuvem diretamente na sua pasta do Google Drive.",
-                        Icone = "bi-google"
                     }
                 ]
             }
