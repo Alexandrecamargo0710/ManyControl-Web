@@ -2,16 +2,42 @@ let tokenClient = null;
 let googleAccessToken = localStorage.getItem('manycontrol_google_token') || null;
 
 window.manyControlJs = {
-    downloadFile: function (filename, content, mimeType) {
-        const blob = new Blob([content], { type: mimeType || 'application/json;charset=utf-8;' });
+    downloadFile: async function (filename, content, mimeType) {
+        const type = mimeType || 'application/json;charset=utf-8;';
+        const blob = new Blob([content], { type: type });
+
+        // Tenta usar a Web Share API (iOS 15+, iPadOS, Android) permitindo "Salvar em Arquivos", AirDrop, etc.
+        if (navigator.canShare && typeof File !== 'undefined') {
+            try {
+                const file = new File([blob], filename, { type: type });
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: filename
+                    });
+                    return true;
+                }
+            } catch (err) {
+                if (err.name === 'AbortError') return true;
+                console.warn('navigator.share falhou ou foi cancelado, usando download padrão:', err);
+            }
+        }
+
+        // Fallback clássico para download em computadores (Chrome, Firefox, Edge)
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        a.rel = 'noopener';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+
+        // Posterga a revogação para não abortar o download em navegadores móveis
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 2500);
+        return true;
     },
 
     triggerFileInput: function (elementId) {
@@ -110,42 +136,84 @@ window.manyControlGoogleDrive = {
         tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: clientId,
             scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email',
-            callback: (tokenResponse) => {
+            callback: async (tokenResponse) => {
+                if (tokenResponse && tokenResponse.error) {
+                    console.error('Google OAuth Error:', tokenResponse);
+                    alert('Erro na autorização do Google: ' + (tokenResponse.error_description || tokenResponse.error));
+                    return;
+                }
                 if (tokenResponse && tokenResponse.access_token) {
                     googleAccessToken = tokenResponse.access_token;
                     localStorage.setItem('manycontrol_google_token', googleAccessToken);
+                    const expiresIn = tokenResponse.expires_in ? parseInt(tokenResponse.expires_in, 10) : 3600;
+                    const expiry = Date.now() + (expiresIn * 1000);
+                    localStorage.setItem('manycontrol_google_token_expiry', expiry.toString());
+
+                    // Busca o e-mail do usuário conectado
+                    await window.manyControlGoogleDrive.getUserEmail(googleAccessToken);
+
                     if (window._googleDotNetRef) {
-                        window._googleDotNetRef.invokeMethodAsync('OnGoogleAuthSuccess', googleAccessToken);
+                        try {
+                            await window._googleDotNetRef.invokeMethodAsync('OnGoogleAuthSuccess', googleAccessToken);
+                        } catch (err) {
+                            console.error('Erro ao invocar OnGoogleAuthSuccess:', err);
+                        }
                     }
+                }
+            },
+            error_callback: (nonOAuthError) => {
+                console.error('Google Identity Services Non-OAuth Error:', nonOAuthError);
+                if (nonOAuthError && (nonOAuthError.type === 'popup_failed_to_open' || nonOAuthError.type === 'popup_closed')) {
+                    alert('A janela de login do Google não pôde ser aberta. Verifique se o navegador bloqueou pop-ups para este site.');
+                } else {
+                    alert('Falha ao abrir login do Google: ' + (nonOAuthError?.message || nonOAuthError?.type || 'Verifique bloqueadores de anúncios ou pop-ups.'));
                 }
             }
         });
     },
 
+    isTokenValid: function() {
+        const token = localStorage.getItem('manycontrol_google_token');
+        if (!token) return false;
+        const expiry = localStorage.getItem('manycontrol_google_token_expiry');
+        if (expiry && Date.now() > parseInt(expiry, 10)) {
+            return false;
+        }
+        return true;
+    },
+
     requestToken: function(dotNetRef, clientId) {
-        window._googleDotNetRef = dotNetRef;
-        if (!tokenClient && clientId) {
-            this.init(clientId);
+        if (dotNetRef) {
+            window._googleDotNetRef = dotNetRef;
+        }
+        const cid = clientId || '467782905209-n8n3i4thm5ga7bphtbqqk7jqq1karjbl.apps.googleusercontent.com';
+        if (!tokenClient && cid) {
+            this.init(cid);
         }
         if (tokenClient) {
-            tokenClient.requestAccessToken({ prompt: 'consent' });
+            tokenClient.requestAccessToken({ prompt: '' });
         } else if (window.google && window.google.accounts && window.google.accounts.oauth2) {
-            this.init(clientId);
+            this.init(cid);
             if (tokenClient) {
-                tokenClient.requestAccessToken({ prompt: 'consent' });
+                tokenClient.requestAccessToken({ prompt: '' });
             }
         } else {
-            alert('Aguarde o carregamento do serviço do Google ou verifique se bloqueadores de pop-up estão ativos.');
+            alert('Aguarde o carregamento do serviço do Google ou verifique se bloqueadores de pop-up / rastreadores estão ativos.');
         }
     },
 
     disconnect: function() {
         if (googleAccessToken && window.google && window.google.accounts && window.google.accounts.oauth2) {
-            window.google.accounts.oauth2.revoke(googleAccessToken, () => {});
+            try {
+                window.google.accounts.oauth2.revoke(googleAccessToken, () => {});
+            } catch (e) {
+                console.warn('Erro ao revogar token:', e);
+            }
         }
         googleAccessToken = null;
         localStorage.removeItem('manycontrol_google_token');
         localStorage.removeItem('manycontrol_google_email');
+        localStorage.removeItem('manycontrol_google_token_expiry');
     },
 
     getUserEmail: async function(token) {
@@ -167,6 +235,18 @@ window.manyControlGoogleDrive = {
     },
 
     syncDrive: async function(jsonContent) {
+        if (!this.isTokenValid()) {
+            this.disconnect();
+            if (window._googleDotNetRef) {
+                try {
+                    window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired');
+                } catch (e) {
+                    console.warn(e);
+                }
+            }
+            throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        }
+
         const t = googleAccessToken || localStorage.getItem('manycontrol_google_token');
         if (!t) throw new Error('Não autenticado com o Google Drive.');
         
@@ -177,7 +257,14 @@ window.manyControlGoogleDrive = {
         });
         
         if (folderRes.status === 401) {
-            localStorage.removeItem('manycontrol_google_token');
+            this.disconnect();
+            if (window._googleDotNetRef) {
+                try {
+                    window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired');
+                } catch (e) {
+                    console.warn(e);
+                }
+            }
             throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
         }
 
@@ -198,6 +285,15 @@ window.manyControlGoogleDrive = {
                     mimeType: 'application/vnd.google-apps.folder'
                 })
             });
+
+            if (createFolderRes.status === 401) {
+                this.disconnect();
+                if (window._googleDotNetRef) {
+                    try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
+                }
+                throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+            }
+
             const newFolder = await createFolderRes.json();
             folderId = newFolder.id;
         }
@@ -207,6 +303,15 @@ window.manyControlGoogleDrive = {
         const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&fields=files(id, name, modifiedTime)`, {
             headers: { Authorization: `Bearer ${t}` }
         });
+
+        if (fileRes.status === 401) {
+            this.disconnect();
+            if (window._googleDotNetRef) {
+                try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
+            }
+            throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        }
+
         const fileData = await fileRes.json();
         let fileId = (fileData.files && fileData.files.length > 0) ? fileData.files[0].id : null;
 
@@ -215,6 +320,13 @@ window.manyControlGoogleDrive = {
             const downloadRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
                 headers: { Authorization: `Bearer ${t}` }
             });
+            if (downloadRes.status === 401) {
+                this.disconnect();
+                if (window._googleDotNetRef) {
+                    try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
+                }
+                throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+            }
             if (downloadRes.ok) {
                 remoteJson = await downloadRes.text();
             }
@@ -222,7 +334,7 @@ window.manyControlGoogleDrive = {
 
         // 3. Fazer upload do arquivo atualizado
         if (fileId) {
-            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+            const patchRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
                 method: 'PATCH',
                 headers: {
                     Authorization: `Bearer ${t}`,
@@ -230,6 +342,13 @@ window.manyControlGoogleDrive = {
                 },
                 body: jsonContent
             });
+            if (patchRes.status === 401) {
+                this.disconnect();
+                if (window._googleDotNetRef) {
+                    try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
+                }
+                throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+            }
         } else {
             const metadata = {
                 name: 'manycontrol-sync.json',
@@ -249,7 +368,7 @@ window.manyControlGoogleDrive = {
                 jsonContent +
                 close_delim;
 
-            await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            const postRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${t}`,
@@ -257,6 +376,13 @@ window.manyControlGoogleDrive = {
                 },
                 body: multipartRequestBody
             });
+            if (postRes.status === 401) {
+                this.disconnect();
+                if (window._googleDotNetRef) {
+                    try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
+                }
+                throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+            }
         }
 
         return remoteJson;
