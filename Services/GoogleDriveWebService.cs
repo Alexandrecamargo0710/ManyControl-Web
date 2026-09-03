@@ -24,8 +24,15 @@ public class GoogleDriveWebService
 
     public async Task<bool> IsConnectedAsync()
     {
-        var token = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", GoogleTokenKey);
-        return !string.IsNullOrWhiteSpace(token);
+        try
+        {
+            return await _jsRuntime.InvokeAsync<bool>("manyControlGoogleDrive.isTokenValid");
+        }
+        catch
+        {
+            var token = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", GoogleTokenKey);
+            return !string.IsNullOrWhiteSpace(token);
+        }
     }
 
     public async Task<string?> GetConnectedEmailAsync()
@@ -52,6 +59,12 @@ public class GoogleDriveWebService
     {
         var email = await _jsRuntime.InvokeAsync<string?>("manyControlGoogleDrive.getUserEmail", token);
         await SincronizarAsync();
+        OnStatusChanged?.Invoke();
+    }
+
+    [JSInvokable]
+    public void OnGoogleSessionExpired()
+    {
         OnStatusChanged?.Invoke();
     }
 

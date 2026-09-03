@@ -129,10 +129,10 @@
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
-            <button class="btn-native-blue" style="min-height: 44px;" @onclick="SincronizarGoogleAgora">
-                <i class="bi bi-arrow-repeat"></i> Sincronizar Agora
+            <button class="btn-native-blue" style="min-height: 44px;" @onclick="SincronizarGoogleAgora" disabled="@IsSincronizandoGoogle">
+                <i class="bi bi-arrow-repeat"></i> @(IsSincronizandoGoogle ? "Sincronizando..." : "Sincronizar Agora")
             </button>
-            <button class="btn-native-gray" style="min-height: 44px; color: #f87171;" @onclick="DesconectarGoogle">
+            <button class="btn-native-gray" style="min-height: 44px; color: #f87171;" @onclick="DesconectarGoogle" disabled="@IsSincronizandoGoogle">
                 Desconectar Conta
             </button>
         </div>
@@ -147,11 +147,15 @@
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
-        <button class="btn-native-gray" style="min-height: 44px;" @onclick="ExportarBackup">Exportar Backup Local</button>
-        <button class="btn-native-gray" style="min-height: 44px;" @onclick="TriggerImportFile">Restaurar de Arquivo</button>
+        <button class="btn-native-gray" style="min-height: 44px;" @onclick="ExportarBackup" disabled="@IsExportandoBackup">
+            <i class="bi bi-download"></i> @(IsExportandoBackup ? "Exportando..." : "Exportar Backup Local")
+        </button>
+        <label for="backupFileInput" class="btn-native-gray" style="min-height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; margin: 0; line-height: 1.25;">
+            <i class="bi bi-upload"></i> Restaurar de Arquivo
+        </label>
     </div>
 
-    <InputFile id="backupFileInput" OnChange="ProcessarArquivoImportado" style="display: none;" accept=".json" />
+    <InputFile id="backupFileInput" OnChange="ProcessarArquivoImportado" class="visually-hidden-file-input" accept=".json" />
 
     @if (!string.IsNullOrEmpty(MensagemBackup))
     {
@@ -285,6 +289,8 @@
     private string MensagemBackup = string.Empty;
     private string UpdateStatusText = "Toque em 'Verificar Atualizações' para forçar a sincronização da versão mais recente no seu aparelho.";
     private bool IsHistoricoModalOpen = false;
+    private bool IsExportandoBackup = false;
+    private bool IsSincronizandoGoogle = false;
 
     private DotNetObjectReference<GoogleDriveWebService>? _dotNetRef;
 
@@ -309,13 +315,17 @@
         {
             ConnectedEmail = await GoogleDriveService.GetConnectedEmailAsync() ?? "Conta Conectada";
         }
+        else
+        {
+            ConnectedEmail = string.Empty;
+        }
         LastSyncText = await GoogleDriveService.GetLastSyncTextAsync();
         StateHasChanged();
     }
 
-    private void AtualizarEstado()
+    private async void AtualizarEstado()
     {
-        _ = InvokeAsync(async () =>
+        await InvokeAsync(async () =>
         {
             await CarregarEstadoAsync();
         });
@@ -337,18 +347,50 @@
 
     private async Task SincronizarGoogleAgora()
     {
-        SyncStatusText = "Sincronizando...";
+        if (IsSincronizandoGoogle) return;
+        IsSincronizandoGoogle = true;
+        SyncStatusText = "Sincronizando com o Google Drive...";
         StateHasChanged();
-        var res = await GoogleDriveService.SincronizarAsync();
-        SyncStatusText = res == "Tudo sincronizado" ? "● Tudo sincronizado" : res;
-        LastSyncText = await GoogleDriveService.GetLastSyncTextAsync();
-        StateHasChanged();
+
+        try
+        {
+            var res = await GoogleDriveService.SincronizarAsync();
+            SyncStatusText = res == "Tudo sincronizado" ? "● Tudo sincronizado" : res;
+            LastSyncText = await GoogleDriveService.GetLastSyncTextAsync();
+            await CarregarEstadoAsync();
+        }
+        catch (Exception ex)
+        {
+            SyncStatusText = $"Falha: {ex.Message}";
+        }
+        finally
+        {
+            IsSincronizandoGoogle = false;
+            StateHasChanged();
+        }
     }
 
     private async Task ExportarBackup()
     {
-        await BackupService.ExportarBackupAsync();
-        MensagemBackup = "Arquivo de backup exportado com sucesso!";
+        if (IsExportandoBackup) return;
+        IsExportandoBackup = true;
+        MensagemBackup = "Gerando arquivo de backup...";
+        StateHasChanged();
+
+        try
+        {
+            await BackupService.ExportarBackupAsync();
+            MensagemBackup = "Backup exportado com sucesso!";
+        }
+        catch (Exception ex)
+        {
+            MensagemBackup = $"Erro ao exportar backup: {ex.Message}";
+        }
+        finally
+        {
+            IsExportandoBackup = false;
+            StateHasChanged();
+        }
     }
 
     private async Task TriggerImportFile()
@@ -363,18 +405,29 @@
             var file = e.File;
             if (file == null) return;
 
-            using var reader = new System.IO.StreamReader(file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+            MensagemBackup = "Restaurando dados do arquivo...";
+            StateHasChanged();
+
+            using var reader = new System.IO.StreamReader(file.OpenReadStream(maxAllowedSize: 15 * 1024 * 1024));
             var json = await reader.ReadToEndAsync();
 
             var sucesso = await BackupService.ImportarBackupJsonAsync(json, false);
             if (sucesso)
             {
-                MensagemBackup = "Dados restaurados com sucesso!";
+                MensagemBackup = "Dados restaurados com sucesso a partir do backup!";
+            }
+            else
+            {
+                MensagemBackup = "Não foi possível restaurar os dados. Verifique se o arquivo JSON é válido.";
             }
         }
         catch (Exception ex)
         {
             MensagemBackup = $"Erro ao restaurar: {ex.Message}";
+        }
+        finally
+        {
+            StateHasChanged();
         }
     }
 

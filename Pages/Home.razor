@@ -18,10 +18,14 @@
     <div style="font-size: 12px; color: var(--text-gray-400);">Armazenamento local seguro do dispositivo</div>
     <div style="font-size: 12px; color: #10b981;">● Tudo sincronizado</div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
-        <button class="btn-native-blue" @onclick="SincronizarAgora">Sincronizar agora</button>
-        <button class="btn-native-gray" @onclick="TriggerImportBackup">Importar backup</button>
+        <button class="btn-native-blue" @onclick="SincronizarAgora">
+            <i class="bi bi-arrow-repeat"></i> Sincronizar agora
+        </button>
+        <label for="homeBackupFileInput" class="btn-native-gray" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; margin: 0; line-height: 1.25;">
+            <i class="bi bi-upload"></i> Importar backup
+        </label>
     </div>
-    <InputFile id="homeBackupFileInput" OnChange="ProcessarArquivoImportado" style="display: none;" accept=".json" />
+    <InputFile id="homeBackupFileInput" OnChange="ProcessarArquivoImportado" class="visually-hidden-file-input" accept=".json" />
 </div>
 
 <!-- Seletor de Mês do Início -->
@@ -572,23 +576,25 @@
 
     private async Task SincronizarAgora()
     {
-        if (await GoogleDriveService.IsConnectedAsync())
+        try
         {
-            var res = await GoogleDriveService.SincronizarAsync();
-            UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
-            await CarregarDadosAsync();
-            await JSRuntime.InvokeVoidAsync("alert", res == "Tudo sincronizado" ? "Sincronização com o Google Drive realizada com sucesso!" : res);
+            if (await GoogleDriveService.IsConnectedAsync())
+            {
+                var res = await GoogleDriveService.SincronizarAsync();
+                UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
+                await CarregarDadosAsync();
+                await JSRuntime.InvokeVoidAsync("alert", res == "Tudo sincronizado" ? "Sincronização com o Google Drive realizada com sucesso!" : res);
+            }
+            else
+            {
+                UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
+                await BackupService.ExportarBackupAsync();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
-            await BackupService.ExportarBackupAsync();
+            await JSRuntime.InvokeVoidAsync("alert", $"Falha ao sincronizar: {ex.Message}");
         }
-    }
-
-    private async Task TriggerImportBackup()
-    {
-        await JSRuntime.InvokeVoidAsync("manyControlJs.triggerFileInput", "homeBackupFileInput");
     }
 
     private async Task ProcessarArquivoImportado(InputFileChangeEventArgs e)
@@ -597,12 +603,23 @@
         {
             var file = e.File;
             if (file == null) return;
-            using var reader = new System.IO.StreamReader(file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+            using var reader = new System.IO.StreamReader(file.OpenReadStream(maxAllowedSize: 15 * 1024 * 1024));
             var json = await reader.ReadToEndAsync();
-            await BackupService.ImportarBackupJsonAsync(json, false);
-            await CarregarDadosAsync();
+            var ok = await BackupService.ImportarBackupJsonAsync(json, false);
+            if (ok)
+            {
+                await CarregarDadosAsync();
+                await JSRuntime.InvokeVoidAsync("alert", "Backup restaurado com sucesso!");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "O arquivo selecionado não é um backup válido do ManyControl.");
+            }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Erro ao importar: {ex.Message}");
+        }
     }
 
     private void ExplicarMetrica(string metrica)

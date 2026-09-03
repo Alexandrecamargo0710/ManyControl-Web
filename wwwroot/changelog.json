@@ -1,9 +1,35 @@
 [
   {
+    "numero": "v1.0.19",
+    "dataLancamento": "03/09/2026",
+    "titulo": "Correção de Sincronização e Backup Local",
+    "isAtual": true,
+    "destaques": [
+      {
+        "tipo": "Ajuste",
+        "titulo": "Restauração e Exportação de Backup Local",
+        "descricao": "Seletor de arquivos nativo e download de backup local 100% compatível com iPhone, Android e computadores.",
+        "icone": "bi-shield-check"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Sincronização com o Google Drive",
+        "descricao": "Melhoria no fluxo de login e detecção automática de sessão expirada para reconexão sem travamentos.",
+        "icone": "bi-google"
+      },
+      {
+        "tipo": "Novidade",
+        "titulo": "Compartilhamento Nativo no Celular",
+        "descricao": "Opção de salvar o backup diretamente no aplicativo 'Arquivos' do iOS ou enviar via WhatsApp e AirDrop.",
+        "icone": "bi-share"
+      }
+    ]
+  },
+  {
     "numero": "v1.0.18",
     "dataLancamento": "02/09/2026",
     "titulo": "Cores Personalizadas e Melhorias de UI",
-    "isAtual": true,
+    "isAtual": false,
     "destaques": [
       {
         "tipo": "Novidade",

@@ -52,9 +52,9 @@ public class VersaoService
     {
         return _versoes.FirstOrDefault(v => v.IsAtual) ?? _versoes.FirstOrDefault() ?? new VersaoInfo
         {
-            Numero = "v1.0.18",
-            DataLancamento = "02/09/2026",
-            Titulo = "Cores Personalizadas e Melhorias de UI",
+            Numero = "v1.0.19",
+            DataLancamento = "03/09/2026",
+            Titulo = "Correção de Sincronização e Backup Local",
             IsAtual = true
         };
     }
@@ -65,10 +65,41 @@ public class VersaoService
         [
             new VersaoInfo
             {
+                Numero = "v1.0.19",
+                DataLancamento = "03/09/2026",
+                Titulo = "Correção de Sincronização e Backup Local",
+                IsAtual = true,
+                Destaques =
+                [
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Ajuste",
+                        Titulo = "Restauração e Exportação de Backup Local",
+                        Descricao = "Seletor de arquivos nativo e download de backup local 100% compatível com iPhone, Android e computadores.",
+                        Icone = "bi-shield-check"
+                    },
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Melhoria",
+                        Titulo = "Sincronização com o Google Drive",
+                        Descricao = "Melhoria no fluxo de login e detecção automática de sessão expirada para reconexão sem travamentos.",
+                        Icone = "bi-google"
+                    },
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Novidade",
+                        Titulo = "Compartilhamento Nativo no Celular",
+                        Descricao = "Opção de salvar o backup diretamente no aplicativo 'Arquivos' do iOS ou enviar via WhatsApp e AirDrop.",
+                        Icone = "bi-share"
+                    }
+                ]
+            },
+            new VersaoInfo
+            {
                 Numero = "v1.0.18",
                 DataLancamento = "02/09/2026",
                 Titulo = "Cores Personalizadas e Melhorias de UI",
-                IsAtual = true,
+                IsAtual = false,
                 Destaques =
                 [
                     new VersaoItemDestaque
