@@ -43,6 +43,7 @@ window.manyControlJs = {
     triggerFileInput: function (elementId) {
         const elem = document.getElementById(elementId);
         if (elem) {
+            elem.value = '';
             elem.click();
         }
     },
@@ -191,11 +192,11 @@ window.manyControlGoogleDrive = {
             this.init(cid);
         }
         if (tokenClient) {
-            tokenClient.requestAccessToken({ prompt: '' });
+            tokenClient.requestAccessToken({ prompt: 'select_account' });
         } else if (window.google && window.google.accounts && window.google.accounts.oauth2) {
             this.init(cid);
             if (tokenClient) {
-                tokenClient.requestAccessToken({ prompt: '' });
+                tokenClient.requestAccessToken({ prompt: 'select_account' });
             }
         } else {
             alert('Aguarde o carregamento do serviço do Google ou verifique se bloqueadores de pop-up / rastreadores estão ativos.');
@@ -234,71 +235,64 @@ window.manyControlGoogleDrive = {
         return null;
     },
 
-    syncDrive: async function(jsonContent) {
+    getOrCreateFolder: async function(t) {
+        const folderQuery = encodeURIComponent("name = 'ManyControl' and mimeType = 'application/vnd.google-apps.folder' and trashed = false");
+        let folderRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${folderQuery}&fields=files(id, name)`, {
+            headers: { Authorization: `Bearer ${t}` }
+        });
+
+        if (folderRes.status === 401) {
+            this.disconnect();
+            if (window._googleDotNetRef) {
+                try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
+            }
+            throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        }
+
+        let folderData = await folderRes.json();
+        if (folderData.files && folderData.files.length > 0) {
+            return folderData.files[0].id;
+        }
+
+        const createFolderRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${t}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: 'ManyControl',
+                mimeType: 'application/vnd.google-apps.folder'
+            })
+        });
+
+        if (createFolderRes.status === 401) {
+            this.disconnect();
+            if (window._googleDotNetRef) {
+                try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
+            }
+            throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        }
+
+        const newFolder = await createFolderRes.json();
+        return newFolder.id;
+    },
+
+    downloadDriveFile: async function() {
         if (!this.isTokenValid()) {
             this.disconnect();
             if (window._googleDotNetRef) {
-                try {
-                    window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired');
-                } catch (e) {
-                    console.warn(e);
-                }
+                try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
             }
             throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
         }
 
         const t = googleAccessToken || localStorage.getItem('manycontrol_google_token');
         if (!t) throw new Error('Não autenticado com o Google Drive.');
-        
-        // 1. Procurar ou criar pasta "ManyControl"
-        const folderQuery = encodeURIComponent("name = 'ManyControl' and mimeType = 'application/vnd.google-apps.folder' and trashed = false");
-        let folderRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${folderQuery}&fields=files(id, name)`, {
-            headers: { Authorization: `Bearer ${t}` }
-        });
-        
-        if (folderRes.status === 401) {
-            this.disconnect();
-            if (window._googleDotNetRef) {
-                try {
-                    window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired');
-                } catch (e) {
-                    console.warn(e);
-                }
-            }
-            throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
-        }
 
-        let folderData = await folderRes.json();
-        let folderId = null;
+        const folderId = await this.getOrCreateFolder(t);
+        if (!folderId) return null;
 
-        if (folderData.files && folderData.files.length > 0) {
-            folderId = folderData.files[0].id;
-        } else {
-            const createFolderRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${t}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: 'ManyControl',
-                    mimeType: 'application/vnd.google-apps.folder'
-                })
-            });
-
-            if (createFolderRes.status === 401) {
-                this.disconnect();
-                if (window._googleDotNetRef) {
-                    try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
-                }
-                throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
-            }
-
-            const newFolder = await createFolderRes.json();
-            folderId = newFolder.id;
-        }
-
-        // 2. Procurar arquivo "manycontrol-sync.json" na pasta
         const fileQuery = encodeURIComponent(`name = 'manycontrol-sync.json' and '${folderId}' in parents and trashed = false`);
         const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&fields=files(id, name, modifiedTime)`, {
             headers: { Authorization: `Bearer ${t}` }
@@ -313,26 +307,59 @@ window.manyControlGoogleDrive = {
         }
 
         const fileData = await fileRes.json();
-        let fileId = (fileData.files && fileData.files.length > 0) ? fileData.files[0].id : null;
+        const fileId = (fileData.files && fileData.files.length > 0) ? fileData.files[0].id : null;
 
-        let remoteJson = null;
-        if (fileId) {
-            const downloadRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                headers: { Authorization: `Bearer ${t}` }
-            });
-            if (downloadRes.status === 401) {
-                this.disconnect();
-                if (window._googleDotNetRef) {
-                    try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
-                }
-                throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        if (!fileId) return null;
+
+        const downloadRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { Authorization: `Bearer ${t}` }
+        });
+
+        if (downloadRes.status === 401) {
+            this.disconnect();
+            if (window._googleDotNetRef) {
+                try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
             }
-            if (downloadRes.ok) {
-                remoteJson = await downloadRes.text();
-            }
+            throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
         }
 
-        // 3. Fazer upload do arquivo atualizado
+        if (downloadRes.ok) {
+            return await downloadRes.text();
+        }
+        return null;
+    },
+
+    uploadDriveFile: async function(jsonContent) {
+        if (!this.isTokenValid()) {
+            this.disconnect();
+            if (window._googleDotNetRef) {
+                try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
+            }
+            throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        }
+
+        const t = googleAccessToken || localStorage.getItem('manycontrol_google_token');
+        if (!t) throw new Error('Não autenticado com o Google Drive.');
+
+        const folderId = await this.getOrCreateFolder(t);
+        if (!folderId) throw new Error('Falha ao obter pasta ManyControl no Google Drive.');
+
+        const fileQuery = encodeURIComponent(`name = 'manycontrol-sync.json' and '${folderId}' in parents and trashed = false`);
+        const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&fields=files(id, name)`, {
+            headers: { Authorization: `Bearer ${t}` }
+        });
+
+        if (fileRes.status === 401) {
+            this.disconnect();
+            if (window._googleDotNetRef) {
+                try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
+            }
+            throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        }
+
+        const fileData = await fileRes.json();
+        const fileId = (fileData.files && fileData.files.length > 0) ? fileData.files[0].id : null;
+
         if (fileId) {
             const patchRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
                 method: 'PATCH',
@@ -384,7 +411,13 @@ window.manyControlGoogleDrive = {
                 throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
             }
         }
+    },
 
-        return remoteJson;
+    syncDrive: async function(jsonContent) {
+        const remote = await this.downloadDriveFile();
+        if (jsonContent) {
+            await this.uploadDriveFile(jsonContent);
+        }
+        return remote;
     }
 };

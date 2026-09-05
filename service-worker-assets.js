@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "pnqRkpF4",
+  "version": "KW6c2+l8",
   "assets": [
     {
       "hash": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
@@ -10,8 +10,8 @@ self.assetsManifest = {
       "url": "404.html"
     },
     {
-      "hash": "sha256-GDVRFhk2O53SRhWxinU1HQHNbmdNgNKauNTi1fHiwDo=",
-      "url": "_framework/ManyControl-Web.ocu1ze8sg4.wasm"
+      "hash": "sha256-/q2w/2fhivGPF3uhOgk1mCb5sKElt/F5hE5xwXJEbtE=",
+      "url": "_framework/ManyControl-Web.uh0y327uwk.wasm"
     },
     {
       "hash": "sha256-J9zMKdljOwNxSgSUyPtzRKli8PCM+tbbqxnFCsQTDCU=",
@@ -186,10 +186,6 @@ self.assetsManifest = {
       "url": "_framework/blazor.webassembly.w3qd1tpl0e.js"
     },
     {
-      "hash": "sha256-rqm+pUBF3zJxHt1lAhB5KU3K4sow8UXGbxQxGboRe34=",
-      "url": "_framework/dotnet.e88w8k2bfn.js"
-    },
-    {
       "hash": "sha256-hYigRhIZKHyCXxXWqL/yR3ZWzZhV2oSi+2N3/UPeoxk=",
       "url": "_framework/dotnet.native.nxw7lo0lh5.wasm"
     },
@@ -200,6 +196,10 @@ self.assetsManifest = {
     {
       "hash": "sha256-MZMguyke9CroSQl+L/SHIGFkPTD+LtYGXkXjAvwWx40=",
       "url": "_framework/dotnet.runtime.zbexyp8zrs.js"
+    },
+    {
+      "hash": "sha256-eDwqhXScUcCwIgJgs0J+ESYIfIwiSAj2M0tuKbrhXHA=",
+      "url": "_framework/dotnet.wuvdhs8vku.js"
     },
     {
       "hash": "sha256-SZLtQnRc0JkwqHab0VUVP7T3uBPSeYzxzDnpxPpUnHk=",
@@ -226,7 +226,7 @@ self.assetsManifest = {
       "url": "changelog.json"
     },
     {
-      "hash": "sha256-SWTvmgSle+ua74jBOcxPwPwGao91Um6JVcmurbqXzEc=",
+      "hash": "sha256-EDEd3N/JAEOJOEBEC4RQZquZOw5tL6zb3S8qLR0pxbw=",
       "url": "css/app.css"
     },
     {
@@ -246,11 +246,11 @@ self.assetsManifest = {
       "url": "icon-512.png"
     },
     {
-      "hash": "sha256-Dgd2uaFjmjwqh6nm3Dpc1sTFUwGw8D4xro0K/QbRtEE=",
+      "hash": "sha256-EY3SyOFZ9Iro0gfvJSPu4MTYfe7UT/lLtkbsGsxO7tE=",
       "url": "index.html"
     },
     {
-      "hash": "sha256-MDH14b0O7foUHNL2iEXCL4TOQqYCzShUITeo4ywc7iM=",
+      "hash": "sha256-LR787DDI38xTI6cFMoQDCr8ofo3JTOg1K8aN8JiC3Ig=",
       "url": "js/app.js"
     },
     {
