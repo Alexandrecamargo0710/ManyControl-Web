@@ -183,8 +183,11 @@ public class FinanceWebService
             item.Data = receita.Data;
             item.Recebida = receita.Recebida;
             item.DataRecebimento = receita.Recebida ? (receita.DataRecebimento ?? receita.Data) : null;
-            item.CategoriaId = receita.CategoriaId;
-            item.Categoria = receita.CategoriaId.HasValue ? _categorias.FirstOrDefault(c => c.Id == receita.CategoriaId.Value) : null;
+            if (receita.CategoriaId.HasValue)
+            {
+                item.CategoriaId = receita.CategoriaId;
+                item.Categoria = _categorias.FirstOrDefault(c => c.Id == receita.CategoriaId.Value);
+            }
             item.UpdatedAt = DateTime.UtcNow;
             await SalvarReceitasAsync();
             NotifyStateChanged();
@@ -262,8 +265,11 @@ public class FinanceWebService
             item.Valor = despesa.Valor;
             item.Data = despesa.Data;
             item.Vencimento = despesa.Vencimento;
-            item.CategoriaId = despesa.CategoriaId;
-            item.Categoria = despesa.CategoriaId.HasValue ? _categorias.FirstOrDefault(c => c.Id == despesa.CategoriaId.Value) : null;
+            if (despesa.CategoriaId.HasValue)
+            {
+                item.CategoriaId = despesa.CategoriaId;
+                item.Categoria = _categorias.FirstOrDefault(c => c.Id == despesa.CategoriaId.Value);
+            }
             item.Recorrente = despesa.Recorrente;
             item.Paga = despesa.Paga;
             item.DataPagamento = despesa.Paga ? (despesa.DataPagamento ?? despesa.Data) : null;
@@ -435,19 +441,49 @@ public class FinanceWebService
             foreach (var cat in package.Categorias ?? [])
             {
                 var idx = _categorias.FindIndex(c => c.Id == cat.Id);
-                if (idx >= 0) _categorias[idx] = cat; else _categorias.Add(cat);
+                if (idx >= 0)
+                {
+                    if (cat.UpdatedAt >= _categorias[idx].UpdatedAt)
+                    {
+                        _categorias[idx] = cat;
+                    }
+                }
+                else
+                {
+                    _categorias.Add(cat);
+                }
             }
 
             foreach (var rec in package.Receitas ?? [])
             {
                 var idx = _receitas.FindIndex(r => r.Id == rec.Id);
-                if (idx >= 0) _receitas[idx] = rec; else _receitas.Add(rec);
+                if (idx >= 0)
+                {
+                    if (rec.UpdatedAt >= _receitas[idx].UpdatedAt)
+                    {
+                        _receitas[idx] = rec;
+                    }
+                }
+                else
+                {
+                    _receitas.Add(rec);
+                }
             }
 
             foreach (var desp in package.Despesas ?? [])
             {
                 var idx = _despesas.FindIndex(d => d.Id == desp.Id);
-                if (idx >= 0) _despesas[idx] = desp; else _despesas.Add(desp);
+                if (idx >= 0)
+                {
+                    if (desp.UpdatedAt >= _despesas[idx].UpdatedAt)
+                    {
+                        _despesas[idx] = desp;
+                    }
+                }
+                else
+                {
+                    _despesas.Add(desp);
+                }
             }
         }
 

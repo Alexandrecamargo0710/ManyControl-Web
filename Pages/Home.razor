@@ -5,7 +5,9 @@
 @inject FinanceWebService FinanceService
 @inject BackupService BackupService
 @inject GoogleDriveWebService GoogleDriveService
+@inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@implements IDisposable
 
 <PageTitle>ManyControl - Início</PageTitle>
 
@@ -16,14 +18,21 @@
     <div style="font-size: 14px; color: var(--text-primary);">Sincronização</div>
     <div style="font-size: 18px; font-weight: 700; color: var(--text-primary);">@UltimaSincronizacaoTexto</div>
     <div style="font-size: 12px; color: var(--text-gray-400);">Armazenamento local seguro do dispositivo</div>
-    <div style="font-size: 12px; color: #10b981;">● Tudo sincronizado</div>
+    @if (IsDriveConectado)
+    {
+        <div style="font-size: 12px; color: #10b981;">● Google Drive Conectado</div>
+    }
+    else
+    {
+        <div style="font-size: 12px; color: var(--text-gray-400);">○ Google Drive Desconectado</div>
+    }
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
         <button class="btn-native-blue" @onclick="SincronizarAgora">
             <i class="bi bi-arrow-repeat"></i> Sincronizar agora
         </button>
-        <label for="homeBackupFileInput" class="btn-native-gray" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; margin: 0; line-height: 1.25;">
+        <button type="button" class="btn-native-gray" style="min-height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; margin: 0; line-height: 1.25;" @onclick='() => TriggerImportFile("homeBackupFileInput")'>
             <i class="bi bi-upload"></i> Importar backup
-        </label>
+        </button>
     </div>
     <InputFile id="homeBackupFileInput" OnChange="ProcessarArquivoImportado" class="visually-hidden-file-input" accept=".json" />
 </div>
@@ -342,7 +351,8 @@
     private decimal SaldoGeral = 0;
     private decimal TotalPagas = 0;
     private decimal TotalPendentes = 0;
-    private string UltimaSincronizacaoTexto = "Sincronizado agora";
+    private string UltimaSincronizacaoTexto = "Carregando...";
+    private bool IsDriveConectado = false;
 
     // Form Nova Receita
     private string NovaReceitaDescricao = string.Empty;
@@ -362,6 +372,7 @@
     private bool IsEditModalVisible = false;
     private bool IsEditingDespesa = false;
     private Guid? EditId;
+    private Guid? EditCategoriaId;
     private string EditModalTitle = "Editar";
     private string EditDescricao = string.Empty;
     private decimal EditValor;
@@ -379,8 +390,23 @@
 
     protected override async Task OnInitializedAsync()
     {
-        FinanceService.OnChange += StateHasChanged;
+        FinanceService.OnChange += OnStateChanged;
+        GoogleDriveService.OnStatusChanged += OnStateChanged;
         await CarregarDadosAsync();
+    }
+
+    private async void OnStateChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            await CarregarDadosAsync();
+        });
+    }
+
+    public void Dispose()
+    {
+        FinanceService.OnChange -= OnStateChanged;
+        GoogleDriveService.OnStatusChanged -= OnStateChanged;
     }
 
     private async Task CarregarDadosAsync()
@@ -397,7 +423,8 @@
         TotalPendentes = DespesasDoMes.Where(d => !d.Paga).Sum(d => d.Valor);
 
         SaldoGeral = await FinanceService.GetSaldoGeralAcumuladoAsync();
-        UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
+        IsDriveConectado = await GoogleDriveService.IsConnectedAsync();
+        UltimaSincronizacaoTexto = await GoogleDriveService.GetLastSyncTextAsync();
         StateHasChanged();
     }
 
@@ -492,6 +519,7 @@
     {
         IsEditingDespesa = false;
         EditId = rec.Id;
+        EditCategoriaId = rec.CategoriaId;
         EditModalTitle = "Editar Receita";
         EditDescricao = rec.Descricao;
         EditValor = rec.Valor;
@@ -504,6 +532,7 @@
     {
         IsEditingDespesa = true;
         EditId = desp.Id;
+        EditCategoriaId = desp.CategoriaId;
         EditModalTitle = "Editar Despesa";
         EditDescricao = desp.Descricao;
         EditValor = desp.Valor;
@@ -516,8 +545,20 @@
 
     private async Task SalvarEdicaoModal()
     {
-        if (string.IsNullOrWhiteSpace(EditDescricao) || EditValor <= 0 || !EditId.HasValue)
+        if (!EditId.HasValue)
             return;
+
+        if (string.IsNullOrWhiteSpace(EditDescricao))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Informe uma descrição válida.");
+            return;
+        }
+
+        if (EditValor <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "O valor deve ser maior que zero.");
+            return;
+        }
 
         if (IsEditingDespesa)
         {
@@ -529,7 +570,8 @@
                 Data = EditData,
                 Vencimento = EditVencimento,
                 Recorrente = EditRecorrente,
-                Paga = EditPaga
+                Paga = EditPaga,
+                CategoriaId = EditCategoriaId
             });
         }
         else
@@ -540,7 +582,8 @@
                 Descricao = EditDescricao.Trim(),
                 Valor = EditValor,
                 Data = EditData,
-                Recebida = EditRecebida
+                Recebida = EditRecebida,
+                CategoriaId = EditCategoriaId
             });
         }
 
@@ -552,6 +595,7 @@
     {
         IsEditModalVisible = false;
         EditId = null;
+        EditCategoriaId = null;
     }
 
     private async Task ExcluirReceita(Guid id)
@@ -581,20 +625,27 @@
             if (await GoogleDriveService.IsConnectedAsync())
             {
                 var res = await GoogleDriveService.SincronizarAsync();
-                UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
                 await CarregarDadosAsync();
                 await JSRuntime.InvokeVoidAsync("alert", res == "Tudo sincronizado" ? "Sincronização com o Google Drive realizada com sucesso!" : res);
             }
             else
             {
-                UltimaSincronizacaoTexto = $"Hoje às {DateTime.Now:HH:mm}";
-                await BackupService.ExportarBackupAsync();
+                var irParaSinc = await JSRuntime.InvokeAsync<bool>("confirm", "O Google Drive não está conectado nesta sessão. Deseja ir para a aba de Sincronização para conectar sua conta?");
+                if (irParaSinc)
+                {
+                    Navigation.NavigateTo("configuracoes");
+                }
             }
         }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("alert", $"Falha ao sincronizar: {ex.Message}");
         }
+    }
+
+    private async Task TriggerImportFile(string inputId)
+    {
+        await JSRuntime.InvokeVoidAsync("manyControlJs.triggerFileInput", inputId);
     }
 
     private async Task ProcessarArquivoImportado(InputFileChangeEventArgs e)

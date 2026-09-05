@@ -436,7 +436,6 @@ input, textarea, select, button {
     white-space: nowrap !important;
     border: 0 !important;
     opacity: 0 !important;
-    pointer-events: none !important;
 }
 
 /* Card de Transação Individual */

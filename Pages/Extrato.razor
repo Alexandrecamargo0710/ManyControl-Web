@@ -3,6 +3,7 @@
 @using ManyControl_Web.Services
 @inject FinanceWebService FinanceService
 @inject IJSRuntime JSRuntime
+@implements IDisposable
 
 <PageTitle>ManyControl - Extrato</PageTitle>
 
@@ -251,6 +252,7 @@ else
     private bool IsEditModalVisible = false;
     private bool IsEditingDespesa = false;
     private Guid? EditId;
+    private Guid? EditCategoriaId;
     private string EditModalTitle = "Editar";
     private string EditDescricao = string.Empty;
     private decimal EditValor;
@@ -297,8 +299,21 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        FinanceService.OnChange += StateHasChanged;
+        FinanceService.OnChange += OnStateChanged;
         await CarregarDadosAsync();
+    }
+
+    private void OnStateChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await CarregarDadosAsync();
+        });
+    }
+
+    public void Dispose()
+    {
+        FinanceService.OnChange -= OnStateChanged;
     }
 
     private async Task CarregarDadosAsync()
@@ -357,6 +372,7 @@ else
     {
         IsEditingDespesa = item.Tipo == "Despesa";
         EditId = item.Id;
+        EditCategoriaId = item.CategoriaId;
         EditModalTitle = item.Tipo == "Despesa" ? "Editar Despesa" : "Editar Receita";
         EditDescricao = item.Descricao;
         EditValor = item.Valor;
@@ -370,8 +386,20 @@ else
 
     private async Task SalvarEdicaoModal()
     {
-        if (string.IsNullOrWhiteSpace(EditDescricao) || EditValor <= 0 || !EditId.HasValue)
+        if (!EditId.HasValue)
             return;
+
+        if (string.IsNullOrWhiteSpace(EditDescricao))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Informe uma descrição válida.");
+            return;
+        }
+
+        if (EditValor <= 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "O valor deve ser maior que zero.");
+            return;
+        }
 
         if (IsEditingDespesa)
         {
@@ -383,7 +411,8 @@ else
                 Data = EditData,
                 Vencimento = EditVencimento,
                 Recorrente = EditRecorrente,
-                Paga = EditPaga
+                Paga = EditPaga,
+                CategoriaId = EditCategoriaId
             });
         }
         else
@@ -394,7 +423,8 @@ else
                 Descricao = EditDescricao.Trim(),
                 Valor = EditValor,
                 Data = EditData,
-                Recebida = EditRecebida
+                Recebida = EditRecebida,
+                CategoriaId = EditCategoriaId
             });
         }
 
@@ -406,6 +436,7 @@ else
     {
         IsEditModalVisible = false;
         EditId = null;
+        EditCategoriaId = null;
     }
 
     private async Task ExcluirTransacao(TransacaoItem item)

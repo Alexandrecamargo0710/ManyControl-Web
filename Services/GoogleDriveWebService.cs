@@ -76,21 +76,27 @@ public class GoogleDriveWebService
 
     public async Task<string> SincronizarAsync()
     {
-        var localPackage = await _financeService.ExportarPacoteAsync();
-        var jsonLocal = JsonSerializer.Serialize(localPackage, new JsonSerializerOptions { WriteIndented = true });
-
         try
         {
-            var remoteJson = await _jsRuntime.InvokeAsync<string?>("manyControlGoogleDrive.syncDrive", jsonLocal);
+            // 1. Baixar dados remotos existentes no Google Drive (se houver)
+            var remoteJson = await _jsRuntime.InvokeAsync<string?>("manyControlGoogleDrive.downloadDriveFile");
 
             if (!string.IsNullOrWhiteSpace(remoteJson))
             {
                 var remotePackage = JsonSerializer.Deserialize<SyncPackage>(remoteJson);
                 if (remotePackage != null)
                 {
+                    // Mescla com Last-Write-Wins (LWW) no banco local
                     await _financeService.ImportarPacoteAsync(remotePackage, false);
                 }
             }
+
+            // 2. Exporta o pacote consolidado com todas as alterações
+            var mergedPackage = await _financeService.ExportarPacoteAsync();
+            var mergedJson = JsonSerializer.Serialize(mergedPackage, new JsonSerializerOptions { WriteIndented = true });
+
+            // 3. Envia o pacote mesclado de volta para a nuvem
+            await _jsRuntime.InvokeVoidAsync("manyControlGoogleDrive.uploadDriveFile", mergedJson);
 
             var nowStr = $"Hoje às {DateTime.Now:HH:mm}";
             await _jsRuntime.InvokeVoidAsync("localStorage.setItem", LastSyncTimeKey, nowStr);

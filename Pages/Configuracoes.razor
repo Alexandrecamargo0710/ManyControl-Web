@@ -150,9 +150,9 @@
         <button class="btn-native-gray" style="min-height: 44px;" @onclick="ExportarBackup" disabled="@IsExportandoBackup">
             <i class="bi bi-download"></i> @(IsExportandoBackup ? "Exportando..." : "Exportar Backup Local")
         </button>
-        <label for="backupFileInput" class="btn-native-gray" style="min-height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; margin: 0; line-height: 1.25;">
+        <button type="button" class="btn-native-gray" style="min-height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; margin: 0; line-height: 1.25;" @onclick="TriggerImportFile">
             <i class="bi bi-upload"></i> Restaurar de Arquivo
-        </label>
+        </button>
     </div>
 
     <InputFile id="backupFileInput" OnChange="ProcessarArquivoImportado" class="visually-hidden-file-input" accept=".json" />
