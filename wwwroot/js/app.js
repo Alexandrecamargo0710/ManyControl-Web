@@ -128,6 +128,24 @@ window.manyControlJs = {
 
     getAccentColor: function () {
         return localStorage.getItem('manycontrol_accent_color') || '';
+    },
+
+    registerStorageListener: function (dotNetRef) {
+        window._blazorFinanceRef = dotNetRef;
+        if (!window._hasStorageListener) {
+            window._hasStorageListener = true;
+            window.addEventListener('storage', (event) => {
+                if (event.key && event.key.startsWith('manycontrol_')) {
+                    if (window._blazorFinanceRef) {
+                        try {
+                            window._blazorFinanceRef.invokeMethodAsync('OnStorageChanged', event.key);
+                        } catch (e) {
+                            console.warn('Erro ao notificar Blazor sobre mudança no storage:', e);
+                        }
+                    }
+                }
+            });
+        }
     }
 };
 
@@ -237,7 +255,7 @@ window.manyControlGoogleDrive = {
 
     getOrCreateFolder: async function(t) {
         const folderQuery = encodeURIComponent("name = 'ManyControl' and mimeType = 'application/vnd.google-apps.folder' and trashed = false");
-        let folderRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${folderQuery}&fields=files(id, name)`, {
+        let folderRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${folderQuery}&orderBy=modifiedTime desc&fields=files(id, name)`, {
             headers: { Authorization: `Bearer ${t}` }
         });
 
@@ -247,6 +265,11 @@ window.manyControlGoogleDrive = {
                 try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
             }
             throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        }
+
+        if (!folderRes.ok) {
+            const errText = await folderRes.text();
+            throw new Error(`Erro ao buscar pasta no Google Drive: ${folderRes.status} ${errText}`);
         }
 
         let folderData = await folderRes.json();
@@ -274,6 +297,11 @@ window.manyControlGoogleDrive = {
             throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
         }
 
+        if (!createFolderRes.ok) {
+            const errText = await createFolderRes.text();
+            throw new Error(`Erro ao criar pasta no Google Drive: ${createFolderRes.status} ${errText}`);
+        }
+
         const newFolder = await createFolderRes.json();
         return newFolder.id;
     },
@@ -294,7 +322,7 @@ window.manyControlGoogleDrive = {
         if (!folderId) return null;
 
         const fileQuery = encodeURIComponent(`name = 'manycontrol-sync.json' and '${folderId}' in parents and trashed = false`);
-        const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&fields=files(id, name, modifiedTime)`, {
+        const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&orderBy=modifiedTime desc&fields=files(id, name, modifiedTime)`, {
             headers: { Authorization: `Bearer ${t}` }
         });
 
@@ -304,6 +332,11 @@ window.manyControlGoogleDrive = {
                 try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
             }
             throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        }
+
+        if (!fileRes.ok) {
+            const errText = await fileRes.text();
+            throw new Error(`Erro ao consultar arquivo no Google Drive: ${fileRes.status} ${errText}`);
         }
 
         const fileData = await fileRes.json();
@@ -323,10 +356,12 @@ window.manyControlGoogleDrive = {
             throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
         }
 
-        if (downloadRes.ok) {
-            return await downloadRes.text();
+        if (!downloadRes.ok) {
+            const errText = await downloadRes.text();
+            throw new Error(`Erro ao baixar arquivo do Google Drive: ${downloadRes.status} ${errText}`);
         }
-        return null;
+
+        return await downloadRes.text();
     },
 
     uploadDriveFile: async function(jsonContent) {
@@ -345,7 +380,7 @@ window.manyControlGoogleDrive = {
         if (!folderId) throw new Error('Falha ao obter pasta ManyControl no Google Drive.');
 
         const fileQuery = encodeURIComponent(`name = 'manycontrol-sync.json' and '${folderId}' in parents and trashed = false`);
-        const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&fields=files(id, name)`, {
+        const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${fileQuery}&orderBy=modifiedTime desc&fields=files(id, name)`, {
             headers: { Authorization: `Bearer ${t}` }
         });
 
@@ -355,6 +390,11 @@ window.manyControlGoogleDrive = {
                 try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
             }
             throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+        }
+
+        if (!fileRes.ok) {
+            const errText = await fileRes.text();
+            throw new Error(`Erro ao consultar arquivo no Google Drive: ${fileRes.status} ${errText}`);
         }
 
         const fileData = await fileRes.json();
@@ -375,6 +415,10 @@ window.manyControlGoogleDrive = {
                     try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
                 }
                 throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+            }
+            if (!patchRes.ok) {
+                const errText = await patchRes.text();
+                throw new Error(`Falha ao atualizar arquivo no Google Drive: ${patchRes.status} ${errText}`);
             }
         } else {
             const metadata = {
@@ -409,6 +453,10 @@ window.manyControlGoogleDrive = {
                     try { window._googleDotNetRef.invokeMethodAsync('OnGoogleSessionExpired'); } catch (e) {}
                 }
                 throw new Error('Sessão expirada. Por favor, conecte-se novamente com o Google.');
+            }
+            if (!postRes.ok) {
+                const errText = await postRes.text();
+                throw new Error(`Falha ao criar arquivo no Google Drive: ${postRes.status} ${errText}`);
             }
         }
     },

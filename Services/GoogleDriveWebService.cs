@@ -83,7 +83,8 @@ public class GoogleDriveWebService
 
             if (!string.IsNullOrWhiteSpace(remoteJson))
             {
-                var remotePackage = JsonSerializer.Deserialize<SyncPackage>(remoteJson);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var remotePackage = JsonSerializer.Deserialize<SyncPackage>(remoteJson, options);
                 if (remotePackage != null)
                 {
                     // Mescla com Last-Write-Wins (LWW) no banco local

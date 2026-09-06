@@ -52,9 +52,9 @@ public class VersaoService
     {
         return _versoes.FirstOrDefault(v => v.IsAtual) ?? _versoes.FirstOrDefault() ?? new VersaoInfo
         {
-            Numero = "v1.0.19",
-            DataLancamento = "03/09/2026",
-            Titulo = "Correção de Sincronização e Backup Local",
+            Numero = "v1.0.20",
+            DataLancamento = "05/09/2026",
+            Titulo = "Correção na Exclusão de Despesas e Sincronização em Tempo Real",
             IsAtual = true
         };
     }
@@ -65,10 +65,41 @@ public class VersaoService
         [
             new VersaoInfo
             {
+                Numero = "v1.0.20",
+                DataLancamento = "05/09/2026",
+                Titulo = "Correção na Exclusão de Despesas e Sincronização em Tempo Real",
+                IsAtual = true,
+                Destaques =
+                [
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Ajuste",
+                        Titulo = "Exclusão de Despesas e Recorrência",
+                        Descricao = "Correção definitiva para despesas excluídas não ressuscitarem após atualização ou sincronização.",
+                        Icone = "bi-trash3-fill"
+                    },
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Melhoria",
+                        Titulo = "Sincronização em Tempo Real entre Abas",
+                        Descricao = "Atualização instantânea entre múltiplas abas abertas no navegador sem necessidade de recarregar.",
+                        Icone = "bi-window-stack"
+                    },
+                    new VersaoItemDestaque
+                    {
+                        Tipo = "Melhoria",
+                        Titulo = "Confiabilidade no Google Drive",
+                        Descricao = "Validação estrita de status e ordenação por arquivos mais recentes ao sincronizar na nuvem.",
+                        Icone = "bi-cloud-check-fill"
+                    }
+                ]
+            },
+            new VersaoInfo
+            {
                 Numero = "v1.0.19",
                 DataLancamento = "03/09/2026",
                 Titulo = "Correção de Sincronização e Backup Local",
-                IsAtual = true,
+                IsAtual = false,
                 Destaques =
                 [
                     new VersaoItemDestaque

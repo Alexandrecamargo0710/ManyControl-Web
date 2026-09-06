@@ -1,9 +1,35 @@
 [
   {
+    "numero": "v1.0.20",
+    "dataLancamento": "05/09/2026",
+    "titulo": "Correção na Exclusão de Despesas e Sincronização em Tempo Real",
+    "isAtual": true,
+    "destaques": [
+      {
+        "tipo": "Ajuste",
+        "titulo": "Exclusão de Despesas e Recorrência",
+        "descricao": "Correção definitiva para despesas excluídas não ressuscitarem após atualização ou sincronização.",
+        "icone": "bi-trash3-fill"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Sincronização em Tempo Real entre Abas",
+        "descricao": "Atualização instantânea entre múltiplas abas abertas no navegador sem necessidade de recarregar.",
+        "icone": "bi-window-stack"
+      },
+      {
+        "tipo": "Melhoria",
+        "titulo": "Confiabilidade no Google Drive",
+        "descricao": "Validação estrita de status e ordenação por arquivos mais recentes ao sincronizar na nuvem.",
+        "icone": "bi-cloud-check-fill"
+      }
+    ]
+  },
+  {
     "numero": "v1.0.19",
     "dataLancamento": "03/09/2026",
     "titulo": "Correção de Sincronização e Backup Local",
-    "isAtual": true,
+    "isAtual": false,
     "destaques": [
       {
         "tipo": "Ajuste",

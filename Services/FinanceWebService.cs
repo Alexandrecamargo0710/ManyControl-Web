@@ -1,24 +1,28 @@
 using ManyControl_Web.Models;
+using Microsoft.JSInterop;
 
 namespace ManyControl_Web.Services;
 
-public class FinanceWebService
+public class FinanceWebService : IDisposable
 {
     private const string CategoriasKey = "manycontrol_categorias";
     private const string ReceitasKey = "manycontrol_receitas";
     private const string DespesasKey = "manycontrol_despesas";
 
     private readonly StorageService _storage;
+    private readonly IJSRuntime _jsRuntime;
     private List<Categoria> _categorias = [];
     private List<Receita> _receitas = [];
     private List<Despesa> _despesas = [];
     private bool _isInitialized;
+    private DotNetObjectReference<FinanceWebService>? _dotNetRef;
 
     public event Action? OnChange;
 
-    public FinanceWebService(StorageService storage)
+    public FinanceWebService(StorageService storage, IJSRuntime jsRuntime)
     {
         _storage = storage;
+        _jsRuntime = jsRuntime;
     }
 
     public async Task InicializarAsync()
@@ -37,7 +41,40 @@ public class FinanceWebService
 
         await ProcessarDespesasRecorrentesAsync();
         _isInitialized = true;
+
+        try
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await _jsRuntime.InvokeVoidAsync("manyControlJs.registerStorageListener", _dotNetRef);
+        }
+        catch
+        {
+            // Ignora se JS runtime não estiver pronto ou indisponível
+        }
+
         NotifyStateChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnStorageChanged(string key)
+    {
+        if (key == DespesasKey || key == ReceitasKey || key == CategoriasKey)
+        {
+            await RecarregarDoStorageAsync();
+        }
+    }
+
+    public async Task RecarregarDoStorageAsync()
+    {
+        _categorias = await _storage.GetItemAsync<List<Categoria>>(CategoriasKey) ?? [];
+        _receitas = await _storage.GetItemAsync<List<Receita>>(ReceitasKey) ?? [];
+        _despesas = await _storage.GetItemAsync<List<Despesa>>(DespesasKey) ?? [];
+        NotifyStateChanged();
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
     }
 
     private void CarregarCategoriasPadrao()
@@ -136,7 +173,7 @@ public class FinanceWebService
         if (item != null)
         {
             item.DeletedAt = DateTime.UtcNow;
-            item.UpdatedAt = DateTime.UtcNow;
+            item.UpdatedAt = item.DeletedAt.Value;
             await SalvarCategoriasAsync();
             NotifyStateChanged();
         }
@@ -215,7 +252,7 @@ public class FinanceWebService
         if (item != null)
         {
             item.DeletedAt = DateTime.UtcNow;
-            item.UpdatedAt = DateTime.UtcNow;
+            item.UpdatedAt = item.DeletedAt.Value;
             await SalvarReceitasAsync();
             NotifyStateChanged();
         }
@@ -300,7 +337,20 @@ public class FinanceWebService
         if (item != null)
         {
             item.DeletedAt = DateTime.UtcNow;
-            item.UpdatedAt = DateTime.UtcNow;
+            item.UpdatedAt = item.DeletedAt.Value;
+
+            if (item.Recorrente)
+            {
+                item.Recorrente = false;
+                var descricaoNorm = item.Descricao.Trim().ToLowerInvariant();
+                var outrosMoldes = _despesas.Where(d => d.Recorrente && d.Descricao.Trim().ToLowerInvariant() == descricaoNorm).ToList();
+                foreach (var m in outrosMoldes)
+                {
+                    m.Recorrente = false;
+                    m.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
             await SalvarDespesasAsync();
             NotifyStateChanged();
         }
@@ -364,46 +414,66 @@ public class FinanceWebService
             .Where(d => d.DeletedAt == null && d.Recorrente)
             .ToList();
 
+        if (recorrentes.Count == 0) return;
+
+        // Busca todas as despesas do mês alvo (incluindo deletadas) para respeitar exclusões manuais
+        var despesasDoMesAlvo = _despesas
+            .Where(d => d.Data.Year == anoAtual && d.Data.Month == mesAtual)
+            .Select(d => d.Descricao.Trim().ToLowerInvariant())
+            .ToHashSet();
+
+        var grupos = recorrentes
+            .GroupBy(d => d.Descricao.Trim().ToLowerInvariant())
+            .ToList();
+
         var novasDespesasAdicionadas = false;
 
-        foreach (var descRecorrente in recorrentes)
+        foreach (var grupo in grupos)
         {
-            if (descRecorrente.Data.Year == anoAtual && descRecorrente.Data.Month == mesAtual)
+            var descricaoNorm = grupo.Key;
+
+            // Se já existe uma despesa com esse nome no mês alvo (mesmo se foi deletada), não recria
+            if (despesasDoMesAlvo.Contains(descricaoNorm))
             {
                 continue;
             }
 
-            var jaExisteNoMes = _despesas.Any(d =>
-                d.DeletedAt == null &&
-                d.Data.Year == anoAtual &&
-                d.Data.Month == mesAtual &&
-                d.Descricao.Equals(descRecorrente.Descricao, StringComparison.OrdinalIgnoreCase) &&
-                d.CategoriaId == descRecorrente.CategoriaId);
+            var modelo = grupo.OrderByDescending(d => d.Data).First();
+            var dataModelo = new DateTime(modelo.Data.Year, modelo.Data.Month, 1);
+            var dataAlvoMes = new DateTime(anoAtual, mesAtual, 1);
 
-            if (!jaExisteNoMes)
+            if (dataModelo >= dataAlvoMes)
             {
-                var dia = Math.Min(descRecorrente.Data.Day, DateTime.DaysInMonth(anoAtual, mesAtual));
-                var novaData = new DateTime(anoAtual, mesAtual, dia);
-                DateTime? novoVencimento = descRecorrente.Vencimento.HasValue
-                    ? new DateTime(anoAtual, mesAtual, Math.Min(descRecorrente.Vencimento.Value.Day, DateTime.DaysInMonth(anoAtual, mesAtual)))
-                    : null;
-
-                _despesas.Add(new Despesa
-                {
-                    Descricao = descRecorrente.Descricao,
-                    Valor = descRecorrente.Valor,
-                    Data = novaData,
-                    Vencimento = novoVencimento,
-                    CategoriaId = descRecorrente.CategoriaId,
-                    Recorrente = true,
-                    Paga = false,
-                    DataPagamento = null,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                });
-
-                novasDespesasAdicionadas = true;
+                continue;
             }
+
+            var diasNoMes = DateTime.DaysInMonth(anoAtual, mesAtual);
+            var diaData = Math.Min(modelo.Data.Day, diasNoMes);
+            var novaData = new DateTime(anoAtual, mesAtual, diaData);
+
+            DateTime? novoVencimento = null;
+            if (modelo.Vencimento.HasValue)
+            {
+                var diaVenc = Math.Min(modelo.Vencimento.Value.Day, diasNoMes);
+                novoVencimento = new DateTime(anoAtual, mesAtual, diaVenc);
+            }
+
+            _despesas.Add(new Despesa
+            {
+                Id = Guid.NewGuid(),
+                Descricao = modelo.Descricao,
+                Valor = modelo.Valor,
+                Data = novaData,
+                Vencimento = novoVencimento,
+                CategoriaId = modelo.CategoriaId,
+                Recorrente = true,
+                Paga = false,
+                DataPagamento = null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            novasDespesasAdicionadas = true;
         }
 
         if (novasDespesasAdicionadas)
@@ -438,12 +508,24 @@ public class FinanceWebService
         }
         else
         {
+            // 1. Categorias
             foreach (var cat in package.Categorias ?? [])
             {
                 var idx = _categorias.FindIndex(c => c.Id == cat.Id);
                 if (idx >= 0)
                 {
-                    if (cat.UpdatedAt >= _categorias[idx].UpdatedAt)
+                    var local = _categorias[idx];
+                    if (local.DeletedAt != null && cat.DeletedAt == null)
+                    {
+                        if (cat.UpdatedAt > local.DeletedAt.Value) _categorias[idx] = cat;
+                        continue;
+                    }
+                    if (local.DeletedAt == null && cat.DeletedAt != null)
+                    {
+                        if (!(local.UpdatedAt > cat.DeletedAt.Value)) _categorias[idx] = cat;
+                        continue;
+                    }
+                    if (cat.UpdatedAt > local.UpdatedAt)
                     {
                         _categorias[idx] = cat;
                     }
@@ -454,12 +536,24 @@ public class FinanceWebService
                 }
             }
 
+            // 2. Receitas
             foreach (var rec in package.Receitas ?? [])
             {
                 var idx = _receitas.FindIndex(r => r.Id == rec.Id);
                 if (idx >= 0)
                 {
-                    if (rec.UpdatedAt >= _receitas[idx].UpdatedAt)
+                    var local = _receitas[idx];
+                    if (local.DeletedAt != null && rec.DeletedAt == null)
+                    {
+                        if (rec.UpdatedAt > local.DeletedAt.Value) _receitas[idx] = rec;
+                        continue;
+                    }
+                    if (local.DeletedAt == null && rec.DeletedAt != null)
+                    {
+                        if (!(local.UpdatedAt > rec.DeletedAt.Value)) _receitas[idx] = rec;
+                        continue;
+                    }
+                    if (rec.UpdatedAt > local.UpdatedAt)
                     {
                         _receitas[idx] = rec;
                     }
@@ -470,12 +564,25 @@ public class FinanceWebService
                 }
             }
 
+            // 3. Despesas
             foreach (var desp in package.Despesas ?? [])
             {
                 var idx = _despesas.FindIndex(d => d.Id == desp.Id);
                 if (idx >= 0)
                 {
-                    if (desp.UpdatedAt >= _despesas[idx].UpdatedAt)
+                    var local = _despesas[idx];
+                    // Tombstone conflict resolution
+                    if (local.DeletedAt != null && desp.DeletedAt == null)
+                    {
+                        if (desp.UpdatedAt > local.DeletedAt.Value) _despesas[idx] = desp;
+                        continue;
+                    }
+                    if (local.DeletedAt == null && desp.DeletedAt != null)
+                    {
+                        if (!(local.UpdatedAt > desp.DeletedAt.Value)) _despesas[idx] = desp;
+                        continue;
+                    }
+                    if (desp.UpdatedAt > local.UpdatedAt)
                     {
                         _despesas[idx] = desp;
                     }

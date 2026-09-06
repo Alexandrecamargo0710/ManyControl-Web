@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.JSInterop;
 
 namespace ManyControl_Web.Services;
@@ -22,7 +22,7 @@ public class StorageService
                 return default;
             }
 
-            return JsonSerializer.Deserialize<T>(json);
+            return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
         catch
         {
