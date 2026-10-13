@@ -341,8 +341,48 @@
 
     private async Task DesconectarGoogle()
     {
+        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Deseja salvar e desconectar? Faremos uma sincronização final para garantir que tudo esteja salvo no seu Google Drive e limparemos a memória deste aparelho");
+        if (!confirm)
+            return;
+
+        IsSincronizandoGoogle = true;
+        SyncStatusText = "Sincronizando antes de desconectar...";
+        StateHasChanged();
+
+        try
+        {
+            var res = await GoogleDriveService.SincronizarAsync();
+            if (res != "Tudo sincronizado")
+            {
+                var prosseguir = await JSRuntime.InvokeAsync<bool>("confirm", $"Aviso na sincronização: {res}\nDeseja desconectar e limpar os dados locais mesmo assim?");
+                if (!prosseguir)
+                {
+                    IsSincronizandoGoogle = false;
+                    SyncStatusText = "Desconexão cancelada.";
+                    StateHasChanged();
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            var prosseguir = await JSRuntime.InvokeAsync<bool>("confirm", $"Não foi possível sincronizar com o Google Drive ({ex.Message}).\nDeseja desconectar e limpar os dados locais mesmo assim?");
+            if (!prosseguir)
+            {
+                IsSincronizandoGoogle = false;
+                SyncStatusText = "Desconexão cancelada.";
+                StateHasChanged();
+                return;
+            }
+        }
+
         await GoogleDriveService.DesconectarAsync();
+        await FinanceService.LimparTodosDadosAsync();
+
+        IsSincronizandoGoogle = false;
+        SyncStatusText = "Conta desconectada e dados locais limpos.";
         await CarregarEstadoAsync();
+        await JSRuntime.InvokeVoidAsync("alert", "Conta desconectada com sucesso! Os dados foram salvos no seu Google Drive e a memória deste aparelho foi limpa.");
     }
 
     private async Task SincronizarGoogleAgora()

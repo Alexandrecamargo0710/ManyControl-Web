@@ -71,6 +71,7 @@ public class GoogleDriveWebService
     public async Task DesconectarAsync()
     {
         await _jsRuntime.InvokeVoidAsync("manyControlGoogleDrive.disconnect");
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", LastSyncTimeKey);
         OnStatusChanged?.Invoke();
     }
 
