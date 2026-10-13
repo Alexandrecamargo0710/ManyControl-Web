@@ -1,4 +1,4 @@
-﻿@using ManyControl_Web.Models
+@using ManyControl_Web.Models
 @using ManyControl_Web.Services
 @inject FinanceWebService FinanceService
 
@@ -75,16 +75,33 @@
                         </div>
                     </div>
 
-                    <div class="form-toggle" @onclick="() => Recorrente = !Recorrente">
-                        <div>
-                            <div style="font-weight: 600; color: #ffffff;">Despesa Recorrente?</div>
-                            <div style="font-size: 11px; color: var(--text-muted);">Repete todo mês automaticamente</div>
+                    <!-- Switch Repetir nos próximos meses? -->
+                    @if (!IsEdicao)
+                    {
+                        <div class="form-toggle" @onclick="AlternarRepetir">
+                            <div>
+                                <div style="font-weight: 600; color: #ffffff;">Repetir nos próximos meses?</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">Ative para gerar parcelas para os meses futuros</div>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" checked="@Repetir" />
+                                <span class="slider"></span>
+                            </div>
                         </div>
-                        <div class="toggle-switch">
-                            <input type="checkbox" checked="@Recorrente" />
-                            <span class="slider"></span>
-                        </div>
-                    </div>
+
+                        @if (Repetir)
+                        {
+                            <div style="margin-bottom: 12px; padding: 12px 14px; background: var(--bg-card-secondary, #1a2234); border: 1px solid var(--border-card); border-radius: 10px;">
+                                <div style="font-size: 14px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">
+                                    Repetir por @RepetirMeses meses
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button type="button" class="btn-action" style="min-width: 44px; height: 38px; padding: 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer;" @onclick="DiminuirRepetirMeses">-</button>
+                                    <button type="button" class="btn-action" style="min-width: 44px; height: 38px; padding: 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer;" @onclick="AumentarRepetirMeses">+</button>
+                                </div>
+                            </div>
+                        }
+                    }
                 }
 
                 <button type="submit" class="btn-primary" style="background: @(Tipo == "Receita" ? "var(--color-green)" : "var(--color-red)"); color: @(Tipo == "Receita" ? "#042416" : "#ffffff"); margin-top: 8px;">
@@ -116,8 +133,28 @@
     public Guid? CategoriaId { get; set; }
     public bool Paga { get; set; }
     public bool Recorrente { get; set; }
+    public bool Repetir { get; set; } = false;
+    public int RepetirMeses { get; set; } = 2;
 
     private List<Categoria> Categorias = [];
+
+    private void AlternarRepetir()
+    {
+        Repetir = !Repetir;
+        if (Repetir && RepetirMeses < 2)
+            RepetirMeses = 2;
+    }
+
+    private void AumentarRepetirMeses()
+    {
+        RepetirMeses++;
+    }
+
+    private void DiminuirRepetirMeses()
+    {
+        if (RepetirMeses > 2)
+            RepetirMeses--;
+    }
 
     public async Task AbrirNovoAsync(string tipo = "Despesa", DateTime? dataReferencia = null)
     {
@@ -131,6 +168,8 @@
         CategoriaId = null;
         Paga = tipo == "Receita";
         Recorrente = false;
+        Repetir = false;
+        RepetirMeses = 2;
 
         await CarregarCategoriasAsync();
         IsOpen = true;
@@ -225,7 +264,7 @@
             }
             else
             {
-                await FinanceService.AddDespesaAsync(despesa);
+                await FinanceService.AddDespesaAsync(despesa, Repetir ? RepetirMeses : 1);
             }
         }
 

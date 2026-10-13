@@ -149,6 +149,10 @@ else
                     {
                         <span style="color: #a78bfa; font-size: 11px;">• Recorrente</span>
                     }
+                    @if (item.GrupoId.HasValue)
+                    {
+                        <span style="color: #60a5fa; font-size: 11px;">• Repetição</span>
+                    }
                 </div>
                 <div style="display: flex; gap: 6px;">
                     <button class="btn-small-edit" @onclick="() => AbrirEdicao(item)">Editar</button>
@@ -182,13 +186,7 @@ else
                     <label class="form-label">Data de Vencimento</label>
                     <input type="date" class="native-input" @bind="EditVencimento" />
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 14px; color: var(--text-primary);">Despesa recorrente</span>
-                    <div class="toggle-switch" @onclick="() => EditRecorrente = !EditRecorrente">
-                        <input type="checkbox" checked="@EditRecorrente" />
-                        <span class="slider"></span>
-                    </div>
-                </div>
+
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                     <span style="font-size: 14px; color: var(--text-primary);">Despesa já paga</span>
                     <div class="toggle-switch" @onclick="() => EditPaga = !EditPaga">
@@ -211,6 +209,42 @@ else
             <div style="display: flex; gap: 12px; margin-top: 12px;">
                 <button class="btn-native-blue" style="flex: 1;" @onclick="SalvarEdicaoModal">Atualizar</button>
                 <button class="btn-native-gray" style="flex: 1;" @onclick="FecharModalEdicao">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Confirmação Atualizar Futuras -->
+@if (IsDialogAtualizarFuturasAberto)
+{
+    <div class="modal-overlay" @onclick="() => IsDialogAtualizarFuturasAberto = false" style="z-index: 1100;">
+        <div class="modal-dialog-box" @onclick:stopPropagation="true">
+            <div class="modal-title-text" style="font-size: 18px; margin-bottom: 10px;">Atualizar parcelas futuras?</div>
+            <div style="font-size: 14px; color: var(--text-gray-300); line-height: 1.5; margin-bottom: 20px;">
+                Deseja aplicar essa alteração apenas a esta despesa ou também a todas as parcelas futuras deste grupo?
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-native-blue" style="width: 100%;" @onclick="() => ExecutarSalvarEdicao(true)">Também às futuras</button>
+                <button class="btn-native-gray" style="width: 100%;" @onclick="() => ExecutarSalvarEdicao(false)">Apenas a esta</button>
+                <button type="button" style="background: transparent; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 6px;" @onclick="() => IsDialogAtualizarFuturasAberto = false">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Confirmação Excluir Futuras -->
+@if (IsDialogExcluirFuturasAberto)
+{
+    <div class="modal-overlay" @onclick="() => IsDialogExcluirFuturasAberto = false" style="z-index: 1100;">
+        <div class="modal-dialog-box" @onclick:stopPropagation="true">
+            <div class="modal-title-text" style="font-size: 18px; margin-bottom: 10px;">Excluir parcelas futuras?</div>
+            <div style="font-size: 14px; color: var(--text-gray-300); line-height: 1.5; margin-bottom: 20px;">
+                Esta despesa faz parte de um grupo. Deseja excluir <strong>APENAS esta despesa</strong> ou também <strong>TODAS as parcelas futuras</strong>?
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-danger" style="width: 100%; background-color: #ef4444; color: white; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;" @onclick="() => ExecutarExclusao(true)">Todas as futuras</button>
+                <button class="btn-native-gray" style="width: 100%;" @onclick="() => ExecutarExclusao(false)">Apenas esta</button>
+                <button type="button" style="background: transparent; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 6px;" @onclick="() => IsDialogExcluirFuturasAberto = false">Cancelar</button>
             </div>
         </div>
     </div>
@@ -253,6 +287,7 @@ else
     private bool IsEditingDespesa = false;
     private Guid? EditId;
     private Guid? EditCategoriaId;
+    private Guid? EditGrupoId;
     private string EditModalTitle = "Editar";
     private string EditDescricao = string.Empty;
     private decimal EditValor;
@@ -261,6 +296,11 @@ else
     private bool EditRecorrente;
     private bool EditPaga;
     private bool EditRecebida = true;
+
+    // Modais de confirmação de grupo
+    private bool IsDialogAtualizarFuturasAberto = false;
+    private bool IsDialogExcluirFuturasAberto = false;
+    private TransacaoItem? ItemParaExcluir;
 
     private string? ExplicacaoTitulo;
     private string? ExplicacaoTexto;
@@ -373,6 +413,7 @@ else
         IsEditingDespesa = item.Tipo == "Despesa";
         EditId = item.Id;
         EditCategoriaId = item.CategoriaId;
+        EditGrupoId = item.GrupoId;
         EditModalTitle = item.Tipo == "Despesa" ? "Editar Despesa" : "Editar Receita";
         EditDescricao = item.Descricao;
         EditValor = item.Valor;
@@ -403,6 +444,29 @@ else
 
         if (IsEditingDespesa)
         {
+            var despesa = await FinanceService.GetDespesaAsync(EditId.Value);
+            if (despesa != null && despesa.GrupoId.HasValue)
+            {
+                EditGrupoId = despesa.GrupoId;
+                IsDialogAtualizarFuturasAberto = true;
+                return;
+            }
+
+            await ExecutarSalvarEdicao(false);
+        }
+        else
+        {
+            await ExecutarSalvarEdicao(false);
+        }
+    }
+
+    private async Task ExecutarSalvarEdicao(bool atualizarFuturas)
+    {
+        IsDialogAtualizarFuturasAberto = false;
+        if (!EditId.HasValue) return;
+
+        if (IsEditingDespesa)
+        {
             await FinanceService.UpdateDespesaAsync(new Despesa
             {
                 Id = EditId.Value,
@@ -412,8 +476,9 @@ else
                 Vencimento = EditVencimento,
                 Recorrente = EditRecorrente,
                 Paga = EditPaga,
-                CategoriaId = EditCategoriaId
-            });
+                CategoriaId = EditCategoriaId,
+                GrupoId = EditGrupoId
+            }, atualizarFuturas);
         }
         else
         {
@@ -437,10 +502,22 @@ else
         IsEditModalVisible = false;
         EditId = null;
         EditCategoriaId = null;
+        EditGrupoId = null;
     }
 
     private async Task ExcluirTransacao(TransacaoItem item)
     {
+        if (item.Tipo == "Despesa")
+        {
+            var despesa = await FinanceService.GetDespesaAsync(item.Id);
+            if (despesa != null && despesa.GrupoId.HasValue)
+            {
+                ItemParaExcluir = item;
+                IsDialogExcluirFuturasAberto = true;
+                return;
+            }
+        }
+
         var confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Deseja excluir '{item.Descricao}'?");
         if (confirm)
         {
@@ -450,10 +527,28 @@ else
             }
             else
             {
-                await FinanceService.DeleteDespesaAsync(item.Id);
+                await FinanceService.DeleteDespesaAsync(item.Id, false);
             }
             await CarregarDadosAsync();
         }
+    }
+
+    private async Task ExecutarExclusao(bool excluirFuturas)
+    {
+        IsDialogExcluirFuturasAberto = false;
+        if (ItemParaExcluir == null) return;
+
+        if (ItemParaExcluir.Tipo == "Receita")
+        {
+            await FinanceService.DeleteReceitaAsync(ItemParaExcluir.Id);
+        }
+        else
+        {
+            await FinanceService.DeleteDespesaAsync(ItemParaExcluir.Id, excluirFuturas);
+        }
+
+        ItemParaExcluir = null;
+        await CarregarDadosAsync();
     }
 
     private void ExplicarMetrica(string metrica)

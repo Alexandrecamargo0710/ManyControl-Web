@@ -314,6 +314,7 @@ input, textarea, select, button {
 /* Variações de Cores dos Cards */
 .card-balanco {
     background-color: var(--card-balanco-bg);
+    grid-column: span 2;
 }
 .card-balanco .metric-card-title { color: var(--text-gray-400); }
 [data-theme="light"] .card-balanco { border-color: #cbd5e1; }

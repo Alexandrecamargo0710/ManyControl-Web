@@ -1,4 +1,4 @@
-﻿namespace ManyControl_Web.Models;
+namespace ManyControl_Web.Models;
 
 public class TransacaoItem
 {
@@ -14,4 +14,5 @@ public class TransacaoItem
     public bool Recorrente { get; set; }
     public DateTime? Vencimento { get; set; }
     public DateTime? DataPagamento { get; set; }
+    public Guid? GrupoId { get; set; }
 }

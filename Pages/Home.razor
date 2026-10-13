@@ -52,24 +52,15 @@
     }
 </div>
 
-<!-- Resumo Financeiro do Mês & Saldo Geral (Grid 2x3) -->
+<!-- Resumo Financeiro do Mês -->
 <div class="metrics-grid">
-    <!-- Balanço do Mês -->
-    <div class="metric-card card-balanco">
+    <!-- Balanço do Mês (Ocupa toda a largura superior) -->
+    <div class="metric-card card-balanco" style="grid-column: span 2;">
         <div class="metric-card-header">
             <span class="metric-card-title">Balanço do Mês</span>
             <span class="metric-card-info" @onclick='() => ExplicarMetrica("balanco")'>ⓘ</span>
         </div>
         <div class="metric-card-value">@BalancoMes.ToString("C2", PtBr)</div>
-    </div>
-
-    <!-- Saldo Geral (Conta) -->
-    <div class="metric-card card-saldo">
-        <div class="metric-card-header">
-            <span class="metric-card-title">Saldo Geral (Conta)</span>
-            <span class="metric-card-info" @onclick='() => ExplicarMetrica("saldo")'>ⓘ</span>
-        </div>
-        <div class="metric-card-value">@SaldoGeral.ToString("C2", PtBr)</div>
     </div>
 
     <!-- Receitas do Mês -->
@@ -159,17 +150,30 @@
         <input type="date" class="native-input" @bind="NovaDespesaVencimento" />
     </div>
 
-    <!-- Switch Recorrente -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 6px 0;">
+    <!-- Switch Repetir nos próximos meses? -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; padding: 6px 0;">
         <div>
-            <div style="font-size: 14px; color: var(--text-primary);">Despesa recorrente</div>
-            <div style="font-size: 12px; color: var(--text-gray-500);">Ative caso essa despesa se repete todo mês</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Repetir nos próximos meses?</div>
+            <div style="font-size: 12px; color: var(--text-gray-500);">Ative para gerar parcelas para os meses futuros</div>
         </div>
-        <div class="toggle-switch" @onclick="() => NovaDespesaRecorrente = !NovaDespesaRecorrente">
-            <input type="checkbox" checked="@NovaDespesaRecorrente" />
+        <div class="toggle-switch" @onclick="AlternarRepetirNovaDespesa">
+            <input type="checkbox" checked="@NovaDespesaRepetir" />
             <span class="slider"></span>
         </div>
     </div>
+
+    @if (NovaDespesaRepetir)
+    {
+        <div style="margin-bottom: 12px; padding: 12px 14px; background: var(--bg-card-secondary, #1a2234); border: 1px solid var(--border-card); border-radius: 10px;">
+            <div style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+                Repetir por @NovaDespesaRepetirMeses meses
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" class="btn-native-gray" style="min-width: 44px; height: 38px; padding: 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer;" @onclick="DiminuirRepetirMeses">-</button>
+                <button type="button" class="btn-native-gray" style="min-width: 44px; height: 38px; padding: 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer;" @onclick="AumentarRepetirMeses">+</button>
+            </div>
+        </div>
+    }
 
     <!-- Switch Paga -->
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 6px 0;">
@@ -219,10 +223,14 @@
                         {
                             <span style="color: #a78bfa; font-size: 11px;">• Recorrente</span>
                         }
+                        @if (desp.GrupoId.HasValue)
+                        {
+                            <span style="color: #60a5fa; font-size: 11px;">• Repetição</span>
+                        }
                     </div>
                     <div style="display: flex; gap: 6px;">
                         <button class="btn-small-edit" @onclick="() => AbrirModalEdicaoDespesa(desp)">Editar</button>
-                        <button class="btn-small-delete" @onclick="() => ExcluirDespesa(desp.Id)">Excluir</button>
+                        <button class="btn-small-delete" @onclick="() => ExcluirDespesa(desp)">Excluir</button>
                     </div>
                 </div>
             </div>
@@ -288,13 +296,7 @@
                     <label class="form-label">Data de Vencimento</label>
                     <input type="date" class="native-input" @bind="EditVencimento" />
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-size: 14px; color: var(--text-primary);">Despesa recorrente</span>
-                    <div class="toggle-switch" @onclick="() => EditRecorrente = !EditRecorrente">
-                        <input type="checkbox" checked="@EditRecorrente" />
-                        <span class="slider"></span>
-                    </div>
-                </div>
+
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                     <span style="font-size: 14px; color: var(--text-primary);">Despesa já paga</span>
                     <div class="toggle-switch" @onclick="() => EditPaga = !EditPaga">
@@ -317,6 +319,42 @@
             <div style="display: flex; gap: 12px; margin-top: 12px;">
                 <button class="btn-native-blue" style="flex: 1;" @onclick="SalvarEdicaoModal">Atualizar</button>
                 <button class="btn-native-gray" style="flex: 1;" @onclick="FecharModalEdicao">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Confirmação Atualizar Futuras -->
+@if (IsDialogAtualizarFuturasAberto)
+{
+    <div class="modal-overlay" @onclick="() => IsDialogAtualizarFuturasAberto = false" style="z-index: 1100;">
+        <div class="modal-dialog-box" @onclick:stopPropagation="true">
+            <div class="modal-title-text" style="font-size: 18px; margin-bottom: 10px;">Atualizar parcelas futuras?</div>
+            <div style="font-size: 14px; color: var(--text-gray-300); line-height: 1.5; margin-bottom: 20px;">
+                Deseja aplicar essa alteração apenas a esta despesa ou também a todas as parcelas futuras deste grupo?
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-native-blue" style="width: 100%;" @onclick="() => ExecutarSalvarEdicaoDespesa(true)">Também às futuras</button>
+                <button class="btn-native-gray" style="width: 100%;" @onclick="() => ExecutarSalvarEdicaoDespesa(false)">Apenas a esta</button>
+                <button type="button" style="background: transparent; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 6px;" @onclick="() => IsDialogAtualizarFuturasAberto = false">Cancelar</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Confirmação Excluir Futuras -->
+@if (IsDialogExcluirFuturasAberto)
+{
+    <div class="modal-overlay" @onclick="() => IsDialogExcluirFuturasAberto = false" style="z-index: 1100;">
+        <div class="modal-dialog-box" @onclick:stopPropagation="true">
+            <div class="modal-title-text" style="font-size: 18px; margin-bottom: 10px;">Excluir parcelas futuras?</div>
+            <div style="font-size: 14px; color: var(--text-gray-300); line-height: 1.5; margin-bottom: 20px;">
+                Esta despesa faz parte de um grupo. Deseja excluir <strong>APENAS esta despesa</strong> ou também <strong>TODAS as parcelas futuras</strong>?
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-danger" style="width: 100%; background-color: #ef4444; color: white; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer;" @onclick="() => ExecutarExclusaoDespesa(true)">Todas as futuras</button>
+                <button class="btn-native-gray" style="width: 100%;" @onclick="() => ExecutarExclusaoDespesa(false)">Apenas esta</button>
+                <button type="button" style="background: transparent; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 6px;" @onclick="() => IsDialogExcluirFuturasAberto = false">Cancelar</button>
             </div>
         </div>
     </div>
@@ -365,7 +403,8 @@
     private decimal? NovaDespesaValor;
     private DateTime NovaDespesaData = DateTime.Today;
     private DateTime? NovaDespesaVencimento;
-    private bool NovaDespesaRecorrente = false;
+    private bool NovaDespesaRepetir = false;
+    private int NovaDespesaRepetirMeses = 2;
     private bool NovaDespesaPaga = false;
 
     // Modal de Edição
@@ -373,6 +412,7 @@
     private bool IsEditingDespesa = false;
     private Guid? EditId;
     private Guid? EditCategoriaId;
+    private Guid? EditGrupoId;
     private string EditModalTitle = "Editar";
     private string EditDescricao = string.Empty;
     private decimal EditValor;
@@ -381,6 +421,11 @@
     private bool EditRecorrente;
     private bool EditPaga;
     private bool EditRecebida = true;
+
+    // Modais de confirmação de grupo
+    private bool IsDialogAtualizarFuturasAberto = false;
+    private bool IsDialogExcluirFuturasAberto = false;
+    private Despesa? DespesaParaExcluir;
 
     private string? ExplicacaoTitulo;
     private string? ExplicacaoTexto;
@@ -472,10 +517,30 @@
         NovaReceitaRecebida = true;
     }
 
+    private void AlternarRepetirNovaDespesa()
+    {
+        NovaDespesaRepetir = !NovaDespesaRepetir;
+        if (NovaDespesaRepetir && NovaDespesaRepetirMeses < 2)
+            NovaDespesaRepetirMeses = 2;
+    }
+
+    private void AumentarRepetirMeses()
+    {
+        NovaDespesaRepetirMeses++;
+    }
+
+    private void DiminuirRepetirMeses()
+    {
+        if (NovaDespesaRepetirMeses > 2)
+            NovaDespesaRepetirMeses--;
+    }
+
     private async Task SalvarNovaDespesa()
     {
         if (string.IsNullOrWhiteSpace(NovaDespesaDescricao) || !NovaDespesaValor.HasValue || NovaDespesaValor <= 0)
             return;
+
+        var repetirMeses = NovaDespesaRepetir ? NovaDespesaRepetirMeses : 1;
 
         await FinanceService.AddDespesaAsync(new Despesa
         {
@@ -483,9 +548,9 @@
             Valor = NovaDespesaValor.Value,
             Data = NovaDespesaData,
             Vencimento = NovaDespesaVencimento,
-            Recorrente = NovaDespesaRecorrente,
+            Recorrente = false,
             Paga = NovaDespesaPaga
-        });
+        }, repetirMeses);
 
         LimparNovaDespesa();
         await CarregarDadosAsync();
@@ -497,7 +562,8 @@
         NovaDespesaValor = null;
         NovaDespesaData = DateTime.Today;
         NovaDespesaVencimento = null;
-        NovaDespesaRecorrente = false;
+        NovaDespesaRepetir = false;
+        NovaDespesaRepetirMeses = 2;
         NovaDespesaPaga = false;
     }
 
@@ -520,6 +586,7 @@
         IsEditingDespesa = false;
         EditId = rec.Id;
         EditCategoriaId = rec.CategoriaId;
+        EditGrupoId = null;
         EditModalTitle = "Editar Receita";
         EditDescricao = rec.Descricao;
         EditValor = rec.Valor;
@@ -533,6 +600,7 @@
         IsEditingDespesa = true;
         EditId = desp.Id;
         EditCategoriaId = desp.CategoriaId;
+        EditGrupoId = desp.GrupoId;
         EditModalTitle = "Editar Despesa";
         EditDescricao = desp.Descricao;
         EditValor = desp.Valor;
@@ -562,17 +630,15 @@
 
         if (IsEditingDespesa)
         {
-            await FinanceService.UpdateDespesaAsync(new Despesa
+            var despesa = await FinanceService.GetDespesaAsync(EditId.Value);
+            if (despesa != null && despesa.GrupoId.HasValue)
             {
-                Id = EditId.Value,
-                Descricao = EditDescricao.Trim(),
-                Valor = EditValor,
-                Data = EditData,
-                Vencimento = EditVencimento,
-                Recorrente = EditRecorrente,
-                Paga = EditPaga,
-                CategoriaId = EditCategoriaId
-            });
+                EditGrupoId = despesa.GrupoId;
+                IsDialogAtualizarFuturasAberto = true;
+                return;
+            }
+
+            await ExecutarSalvarEdicaoDespesa(false);
         }
         else
         {
@@ -585,7 +651,29 @@
                 Recebida = EditRecebida,
                 CategoriaId = EditCategoriaId
             });
+
+            FecharModalEdicao();
+            await CarregarDadosAsync();
         }
+    }
+
+    private async Task ExecutarSalvarEdicaoDespesa(bool atualizarFuturas)
+    {
+        IsDialogAtualizarFuturasAberto = false;
+        if (!EditId.HasValue) return;
+
+        await FinanceService.UpdateDespesaAsync(new Despesa
+        {
+            Id = EditId.Value,
+            Descricao = EditDescricao.Trim(),
+            Valor = EditValor,
+            Data = EditData,
+            Vencimento = EditVencimento,
+            Recorrente = EditRecorrente,
+            Paga = EditPaga,
+            CategoriaId = EditCategoriaId,
+            GrupoId = EditGrupoId
+        }, atualizarFuturas);
 
         FecharModalEdicao();
         await CarregarDadosAsync();
@@ -596,6 +684,7 @@
         IsEditModalVisible = false;
         EditId = null;
         EditCategoriaId = null;
+        EditGrupoId = null;
     }
 
     private async Task ExcluirReceita(Guid id)
@@ -608,14 +697,31 @@
         }
     }
 
-    private async Task ExcluirDespesa(Guid id)
+    private async Task ExcluirDespesa(Despesa desp)
     {
+        if (desp.GrupoId.HasValue)
+        {
+            DespesaParaExcluir = desp;
+            IsDialogExcluirFuturasAberto = true;
+            return;
+        }
+
         var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Deseja excluir esta despesa?");
         if (confirm)
         {
-            await FinanceService.DeleteDespesaAsync(id);
+            await FinanceService.DeleteDespesaAsync(desp.Id, false);
             await CarregarDadosAsync();
         }
+    }
+
+    private async Task ExecutarExclusaoDespesa(bool excluirFuturas)
+    {
+        IsDialogExcluirFuturasAberto = false;
+        if (DespesaParaExcluir == null) return;
+
+        await FinanceService.DeleteDespesaAsync(DespesaParaExcluir.Id, excluirFuturas);
+        DespesaParaExcluir = null;
+        await CarregarDadosAsync();
     }
 
     private async Task SincronizarAgora()

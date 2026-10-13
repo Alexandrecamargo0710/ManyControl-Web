@@ -39,7 +39,6 @@ public class FinanceWebService : IDisposable
             await SalvarCategoriasAsync();
         }
 
-        await ProcessarDespesasRecorrentesAsync();
         _isInitialized = true;
 
         try
@@ -274,30 +273,67 @@ public class FinanceWebService : IDisposable
             .ToList();
     }
 
-    public async Task AddDespesaAsync(Despesa despesa)
+    public async Task<Despesa?> GetDespesaAsync(Guid id)
     {
         await InicializarAsync();
-        despesa.CreatedAt = DateTime.UtcNow;
-        despesa.UpdatedAt = DateTime.UtcNow;
-        if (despesa.Paga && despesa.DataPagamento == null)
+        return _despesas.FirstOrDefault(d => d.Id == id && d.DeletedAt == null);
+    }
+
+    public async Task AddDespesaAsync(Despesa despesa, int repetirMeses = 1)
+    {
+        await InicializarAsync();
+
+        Guid? grupoId = repetirMeses > 1 ? Guid.NewGuid() : null;
+
+        for (int i = 0; i < Math.Max(1, repetirMeses); i++)
         {
-            despesa.DataPagamento = despesa.Data;
+            var anoIteracao = despesa.Data.AddMonths(i).Year;
+            var mesIteracao = despesa.Data.AddMonths(i).Month;
+            var diasNoMes = DateTime.DaysInMonth(anoIteracao, mesIteracao);
+            var diaData = Math.Min(despesa.Data.Day, diasNoMes);
+            var dataIteracao = new DateTime(anoIteracao, mesIteracao, diaData);
+
+            DateTime? vencimentoIteracao = null;
+            if (despesa.Vencimento.HasValue)
+            {
+                var anoVenc = despesa.Vencimento.Value.AddMonths(i).Year;
+                var mesVenc = despesa.Vencimento.Value.AddMonths(i).Month;
+                var diasNoMesVenc = DateTime.DaysInMonth(anoVenc, mesVenc);
+                var diaVenc = Math.Min(despesa.Vencimento.Value.Day, diasNoMesVenc);
+                vencimentoIteracao = new DateTime(anoVenc, mesVenc, diaVenc);
+            }
+
+            var nova = new Despesa
+            {
+                Id = Guid.NewGuid(),
+                Descricao = despesa.Descricao,
+                Valor = despesa.Valor,
+                Data = dataIteracao,
+                Vencimento = vencimentoIteracao,
+                CategoriaId = despesa.CategoriaId,
+                Categoria = despesa.CategoriaId.HasValue ? _categorias.FirstOrDefault(c => c.Id == despesa.CategoriaId.Value) : null,
+                Recorrente = false,
+                GrupoId = grupoId,
+                Paga = i == 0 ? despesa.Paga : false,
+                DataPagamento = (i == 0 && despesa.Paga) ? (despesa.DataPagamento ?? dataIteracao) : null,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _despesas.Add(nova);
         }
-        if (despesa.CategoriaId.HasValue)
-        {
-            despesa.Categoria = _categorias.FirstOrDefault(c => c.Id == despesa.CategoriaId.Value);
-        }
-        _despesas.Add(despesa);
+
         await SalvarDespesasAsync();
         NotifyStateChanged();
     }
 
-    public async Task UpdateDespesaAsync(Despesa despesa)
+    public async Task UpdateDespesaAsync(Despesa despesa, bool atualizarFuturas = false)
     {
         await InicializarAsync();
         var item = _despesas.FirstOrDefault(d => d.Id == despesa.Id);
         if (item != null)
         {
+            var dataReferencia = item.Data;
             item.Descricao = despesa.Descricao;
             item.Valor = despesa.Valor;
             item.Data = despesa.Data;
@@ -307,10 +343,41 @@ public class FinanceWebService : IDisposable
                 item.CategoriaId = despesa.CategoriaId;
                 item.Categoria = _categorias.FirstOrDefault(c => c.Id == despesa.CategoriaId.Value);
             }
-            item.Recorrente = despesa.Recorrente;
+            else
+            {
+                item.CategoriaId = null;
+                item.Categoria = null;
+            }
+            item.Recorrente = false;
             item.Paga = despesa.Paga;
             item.DataPagamento = despesa.Paga ? (despesa.DataPagamento ?? despesa.Data) : null;
             item.UpdatedAt = DateTime.UtcNow;
+
+            // Se solicitado e houver GrupoId, atualiza as parcelas futuras
+            if (atualizarFuturas && item.GrupoId.HasValue)
+            {
+                var futuras = _despesas
+                    .Where(d => d.GrupoId == item.GrupoId && d.Data > dataReferencia && d.Id != item.Id && d.DeletedAt == null)
+                    .ToList();
+
+                foreach (var f in futuras)
+                {
+                    f.Descricao = despesa.Descricao;
+                    f.Valor = despesa.Valor;
+                    if (despesa.CategoriaId.HasValue)
+                    {
+                        f.CategoriaId = despesa.CategoriaId;
+                        f.Categoria = _categorias.FirstOrDefault(c => c.Id == despesa.CategoriaId.Value);
+                    }
+                    else
+                    {
+                        f.CategoriaId = null;
+                        f.Categoria = null;
+                    }
+                    f.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
             await SalvarDespesasAsync();
             NotifyStateChanged();
         }
@@ -330,7 +397,7 @@ public class FinanceWebService : IDisposable
         }
     }
 
-    public async Task DeleteDespesaAsync(Guid id)
+    public async Task DeleteDespesaAsync(Guid id, bool excluirFuturas = false)
     {
         await InicializarAsync();
         var item = _despesas.FirstOrDefault(d => d.Id == id);
@@ -339,15 +406,16 @@ public class FinanceWebService : IDisposable
             item.DeletedAt = DateTime.UtcNow;
             item.UpdatedAt = item.DeletedAt.Value;
 
-            if (item.Recorrente)
+            if (excluirFuturas && item.GrupoId.HasValue)
             {
-                item.Recorrente = false;
-                var descricaoNorm = item.Descricao.Trim().ToLowerInvariant();
-                var outrosMoldes = _despesas.Where(d => d.Recorrente && d.Descricao.Trim().ToLowerInvariant() == descricaoNorm).ToList();
-                foreach (var m in outrosMoldes)
+                var futuras = _despesas
+                    .Where(d => d.GrupoId == item.GrupoId && d.Data > item.Data && d.Id != item.Id && d.DeletedAt == null)
+                    .ToList();
+
+                foreach (var f in futuras)
                 {
-                    m.Recorrente = false;
-                    m.UpdatedAt = DateTime.UtcNow;
+                    f.DeletedAt = DateTime.UtcNow;
+                    f.UpdatedAt = f.DeletedAt.Value;
                 }
             }
 
@@ -395,7 +463,8 @@ public class FinanceWebService : IDisposable
                 Paga = d.Paga,
                 Recorrente = d.Recorrente,
                 Vencimento = d.Vencimento,
-                DataPagamento = d.DataPagamento
+                DataPagamento = d.DataPagamento,
+                GrupoId = d.GrupoId
             });
 
         return receitas.Concat(despesas)
@@ -403,84 +472,8 @@ public class FinanceWebService : IDisposable
             .ToList();
     }
 
-    // --- Despesas Recorrentes ---
-    public async Task ProcessarDespesasRecorrentesAsync()
-    {
-        var hoje = DateTime.Today;
-        var anoAtual = hoje.Year;
-        var mesAtual = hoje.Month;
-
-        var recorrentes = _despesas
-            .Where(d => d.DeletedAt == null && d.Recorrente)
-            .ToList();
-
-        if (recorrentes.Count == 0) return;
-
-        // Busca todas as despesas do mês alvo (incluindo deletadas) para respeitar exclusões manuais
-        var despesasDoMesAlvo = _despesas
-            .Where(d => d.Data.Year == anoAtual && d.Data.Month == mesAtual)
-            .Select(d => d.Descricao.Trim().ToLowerInvariant())
-            .ToHashSet();
-
-        var grupos = recorrentes
-            .GroupBy(d => d.Descricao.Trim().ToLowerInvariant())
-            .ToList();
-
-        var novasDespesasAdicionadas = false;
-
-        foreach (var grupo in grupos)
-        {
-            var descricaoNorm = grupo.Key;
-
-            // Se já existe uma despesa com esse nome no mês alvo (mesmo se foi deletada), não recria
-            if (despesasDoMesAlvo.Contains(descricaoNorm))
-            {
-                continue;
-            }
-
-            var modelo = grupo.OrderByDescending(d => d.Data).First();
-            var dataModelo = new DateTime(modelo.Data.Year, modelo.Data.Month, 1);
-            var dataAlvoMes = new DateTime(anoAtual, mesAtual, 1);
-
-            if (dataModelo >= dataAlvoMes)
-            {
-                continue;
-            }
-
-            var diasNoMes = DateTime.DaysInMonth(anoAtual, mesAtual);
-            var diaData = Math.Min(modelo.Data.Day, diasNoMes);
-            var novaData = new DateTime(anoAtual, mesAtual, diaData);
-
-            DateTime? novoVencimento = null;
-            if (modelo.Vencimento.HasValue)
-            {
-                var diaVenc = Math.Min(modelo.Vencimento.Value.Day, diasNoMes);
-                novoVencimento = new DateTime(anoAtual, mesAtual, diaVenc);
-            }
-
-            _despesas.Add(new Despesa
-            {
-                Id = Guid.NewGuid(),
-                Descricao = modelo.Descricao,
-                Valor = modelo.Valor,
-                Data = novaData,
-                Vencimento = novoVencimento,
-                CategoriaId = modelo.CategoriaId,
-                Recorrente = true,
-                Paga = false,
-                DataPagamento = null,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            });
-
-            novasDespesasAdicionadas = true;
-        }
-
-        if (novasDespesasAdicionadas)
-        {
-            await SalvarDespesasAsync();
-        }
-    }
+    // --- Despesas Recorrentes (Legado Mantido como no-op) ---
+    public Task ProcessarDespesasRecorrentesAsync() => Task.CompletedTask;
 
     // --- Backup & Sincronização ---
     public async Task<SyncPackage> ExportarPacoteAsync()

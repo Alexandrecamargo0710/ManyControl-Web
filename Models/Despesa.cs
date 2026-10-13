@@ -1,4 +1,4 @@
-﻿namespace ManyControl_Web.Models;
+namespace ManyControl_Web.Models;
 
 public class Despesa
 {
@@ -21,6 +21,8 @@ public class Despesa
     public bool Paga { get; set; }
 
     public DateTime? DataPagamento { get; set; }
+
+    public Guid? GrupoId { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
